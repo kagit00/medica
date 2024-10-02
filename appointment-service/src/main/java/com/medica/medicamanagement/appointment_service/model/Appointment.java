@@ -17,7 +17,6 @@ import java.util.UUID;
 @AllArgsConstructor
 @Table(name = "appointments")
 public class Appointment {
-
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
@@ -33,7 +32,10 @@ public class Appointment {
     private String endTime;
     @Column(name = "status", nullable = false)
     private String status;
-    @OneToMany(mappedBy = "appointment", cascade = CascadeType.ALL)
-    @JsonManagedReference
-    private List<AppointmentHistory> appointmentHistories;
+    @Column(name = "appointment_description", columnDefinition = "text")
+    private String appointmentDescription;
+    @Column(nullable = false, name = "created_at")
+    private String createdAt;
+    @Column(nullable = false, name = "updated_at")
+    private String updatedAt;
 }

@@ -3,7 +3,7 @@ package com.medica.medicamanagement.doctor_service.controller;
 import com.medica.dto.DoctorApprovalResponse;
 import com.medica.medicamanagement.doctor_service.dto.DoctorRequest;
 import com.medica.medicamanagement.doctor_service.dto.DoctorResponse;
-import com.medica.medicamanagement.doctor_service.service.DoctorServiceImplementation;
+import com.medica.medicamanagement.doctor_service.service.DoctorService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -18,7 +18,7 @@ import java.util.UUID;
 @RequestMapping("/api/doctors")
 @RequiredArgsConstructor
 public class DoctorController {
-    private final DoctorServiceImplementation doctorService;
+    private final DoctorService doctorService;
 
     @GetMapping(value = "/", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<DoctorResponse>> getAllDoctors() {

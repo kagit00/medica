@@ -4,12 +4,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.medica.dto.AppointmentRequest;
 import com.medica.dto.AppointmentResponse;
 import com.medica.dto.DoctorApprovalResponse;
-import com.medica.dto.TimeRange;
-import com.medica.medicamanagement.appointment_service.client.DoctorServiceClientImplementation;
+import com.medica.dto.DoctorResponse;
+import com.medica.medicamanagement.appointment_service.client.DoctorServiceClient;
 import com.medica.medicamanagement.appointment_service.dao.AppointmentRepository;
 import com.medica.medicamanagement.appointment_service.model.Appointment;
 import com.medica.model.AppointmentStatus;
 import com.medica.util.BasicUtility;
+import com.medica.util.Constant;
+import com.medica.util.DefaultValuesPopulator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -18,6 +20,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.UUID;
 
 @Service
@@ -25,7 +28,7 @@ import java.util.UUID;
 @Slf4j
 public class AppointmentServiceImplementation implements AppointmentService {
     private final AppointmentRepository appointmentRepository;
-    private final DoctorServiceClientImplementation doctorService;
+    private final DoctorServiceClient doctorService;
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final ObjectMapper om = new ObjectMapper();
     private static final String TOPIC = "appointment_response_by_appointment_setters";
@@ -85,13 +88,28 @@ public class AppointmentServiceImplementation implements AppointmentService {
     public void requestDoctorForAppointment(String appointmentRequest) {
         try {
             AppointmentRequest request = om.readValue(appointmentRequest, AppointmentRequest.class);
-            this.doctorService.getDoctorById(request.getDoctorId().toString());
+            DoctorResponse doctorResponse = this.doctorService.getDoctorById(request.getDoctorId().toString());
+
+            if (Objects.isNull(doctorResponse)) {
+                log.info(Constant.DOCTOR_NOT_FOUND);
+                kafkaTemplate.send(
+                        "sms-set-by-appointment-setters",
+                        "{" + "patientId: " + request.getPatientId() + ", " +
+                                "message: " + Constant.DOCTOR_NOT_FOUND + "}"
+                );
+                return;
+            }
 
             boolean isTimeSlotAlreadyTakenByPatient = this.appointmentRepository.existsByTimeRangePatient(request.getPatientId(),
                     request.getAppointmentDate(), request.getTimeRange().getStartTime(), request.getTimeRange().getEndTime());
 
             if (isTimeSlotAlreadyTakenByPatient) {
-                kafkaTemplate.send(TOPIC, "Invalid Appointment Request. Time slot already taken by patient");
+                log.info(Constant.TIME_ALREADY_TAKEN_BY_PATIENT);
+                kafkaTemplate.send(
+                        "sms-set-by-appointment-setters",
+                        "{" + "patientId: " + request.getPatientId() + ", " +
+                                "message: " + Constant.TIME_ALREADY_TAKEN_BY_PATIENT + "}"
+                );
                 return;
             }
 
@@ -99,13 +117,19 @@ public class AppointmentServiceImplementation implements AppointmentService {
                     request.getAppointmentDate(), request.getTimeRange().getStartTime(), request.getTimeRange().getEndTime());
 
             if (isTimeSlotAlreadyTakenByDoctor) {
-                kafkaTemplate.send(TOPIC, "Invalid Appointment Request. Time slot already taken by doctor");
+                log.info(Constant.getErrorMessageForInvalidTimeRange(doctorResponse.getName()));
+                kafkaTemplate.send(
+                        "sms-set-by-appointment-setters",
+                        "{" + "patientId: " + request.getPatientId() + ", " +
+                                "message: " + Constant.getErrorMessageForInvalidTimeRange(doctorResponse.getName()) + "}"
+                );
                 return;
             }
 
             Appointment appointment = Appointment.builder()
                     .patientId(request.getPatientId()).doctorId(request.getDoctorId()).appointmentDate(request.getAppointmentDate())
-                    .status(request.getStatus()).startTime(request.getTimeRange().getStartTime()).endTime(request.getTimeRange().getEndTime())
+                    .status(AppointmentStatus.PENDING.name()).startTime(request.getTimeRange().getStartTime()).endTime(request.getTimeRange().getEndTime())
+                    .createdAt(DefaultValuesPopulator.getCurrentTimestamp()).updatedAt(DefaultValuesPopulator.getCurrentTimestamp())
                     .build();
 
             this.appointmentRepository.save(appointment);
@@ -137,7 +161,7 @@ public class AppointmentServiceImplementation implements AppointmentService {
                 appointment.setStatus(approvalResponse.getStatus());
                 responseMessage = "Doctor Rejected The Appointment.";
 
-            } else if (AppointmentStatus.HOLD.name().equals(approvalResponse.getStatus())) {
+            } else if (AppointmentStatus.PENDING.name().equals(approvalResponse.getStatus())) {
                 appointment.setStatus(approvalResponse.getStatus());
                 this.appointmentRepository.save(appointment);
                 return;
@@ -145,8 +169,12 @@ public class AppointmentServiceImplementation implements AppointmentService {
             } else
                 return;
 
+            appointment.setUpdatedAt(DefaultValuesPopulator.getCurrentTimestamp());
             this.appointmentRepository.save(appointment);
-            kafkaTemplate.send(TOPIC, responseMessage);
+            kafkaTemplate.send(
+                    "sms-set-by-appointment-setters",
+                    "{" + "patientId: " + appointment.getPatientId() + ", " + "message: " + responseMessage + "}"
+            );
 
         } catch (Exception e) {
             kafkaTemplate.send(TOPIC, e.getMessage());
@@ -155,7 +183,7 @@ public class AppointmentServiceImplementation implements AppointmentService {
 
     @Scheduled(cron = "0 0 0 * * ?")
     public void checkPendingAppointments() {
-        List<Appointment> pendingAppointments = appointmentRepository.findByStatus(AppointmentStatus.HOLD.name());
+        List<Appointment> pendingAppointments = appointmentRepository.findByStatus(AppointmentStatus.PENDING.name());
 
         int batchSize = 5;
         int processedCount = 0;
@@ -168,6 +196,22 @@ public class AppointmentServiceImplementation implements AppointmentService {
             kafkaTemplate.send("appointment-status-update-retry", String.valueOf(appointment.getId()));
             processedCount++;
         }
+    }
+
+    @KafkaListener(topics = "appointment-cancelled-by-patient", groupId = "appointment-service-group")
+    public void cancelAppointmentOnPatientRequest(String appointmentId) {
+        Appointment appointment = this.appointmentRepository.findById(UUID.fromString(appointmentId)).orElse(null);
+
+        if (!Objects.isNull(appointment)) {
+            appointment.setStatus(AppointmentStatus.CANCELED.name());
+            appointment.setUpdatedAt(DefaultValuesPopulator.getCurrentTimestamp());
+            appointment.setAppointmentDescription("Appointment Cancelled by Patient ID " + appointment.getPatientId());
+            appointment.setUpdatedAt(DefaultValuesPopulator.getCurrentTimestamp());
+            this.appointmentRepository.save(appointment);
+            kafkaTemplate.send("appointment-cancelled-by-appointment-setters", appointmentId);
+        }
+
+
     }
 
     private AppointmentResponse mapToResponse(Appointment appointment) {

@@ -23,4 +23,8 @@ public class DoctorApproval {
     private String status;
     @Column(columnDefinition = "text")
     private String doctorComments;
+    @Column(nullable = false, name = "created_at")
+    private String createdAt;
+    @Column(nullable = false, name = "updated_at")
+    private String updatedAt;
 }

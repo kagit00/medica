@@ -1,7 +1,6 @@
 package com.medica.medicamanagement.patient_service.service;
 
 import com.medica.dto.AppointmentRequest;
-import com.medica.dto.AppointmentResponse;
 import com.medica.dto.NotificationResponse;
 import com.medica.medicamanagement.patient_service.dto.PatientRequest;
 import com.medica.medicamanagement.patient_service.dto.PatientResponse;
@@ -17,4 +16,5 @@ public interface PatientService {
     Patient getPatientById(UUID patientId);
     List<Patient> getAllPatients();
     NotificationResponse requestForAppointment(AppointmentRequest request);
+    NotificationResponse cancelAppointment(String appointmentId);
 }

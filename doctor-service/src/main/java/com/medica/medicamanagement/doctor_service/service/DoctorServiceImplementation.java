@@ -47,10 +47,8 @@ public class DoctorServiceImplementation implements DoctorService {
 
     @Override
     public DoctorResponse getDoctorById(UUID id) {
-        Doctor doctor = this.doctorRepository.findById(id).orElseThrow(
-                () -> new NoSuchElementException("No Doctor Found With Id: " + id)
-        );
-        return mapToResponse(doctor);
+        Doctor doctor = this.doctorRepository.findById(id).orElse(null);
+        return Objects.isNull(doctor)? null : mapToResponse(doctor);
     }
 
     @Override
@@ -103,7 +101,8 @@ public class DoctorServiceImplementation implements DoctorService {
         try {
             DoctorApprovalResponse approvalResponse = om.readValue(doctorApprovalResponse, DoctorApprovalResponse.class);
             DoctorApproval approval = DoctorApproval.builder()
-                    .appointmentId(approvalResponse.getAppointmentId()).status(AppointmentStatus.HOLD.name()).doctorComments("NA")
+                    .appointmentId(approvalResponse.getAppointmentId()).status(AppointmentStatus.PENDING.name()).doctorComments("NA")
+                    .createdAt(com.medica.util.DefaultValuesPopulator.getCurrentTimestamp()).updatedAt(com.medica.util.DefaultValuesPopulator.getCurrentTimestamp())
                     .build();
             doctorApprovalRepository.save(approval);
         } catch (Exception e) {
@@ -115,17 +114,19 @@ public class DoctorServiceImplementation implements DoctorService {
         switch (status) {
             case "SCHEDULED":
                 doctorApproval.setDoctorComments("Appointment Approved");
+                doctorApproval.setUpdatedAt(DefaultValuesPopulator.getCurrentTimestamp());
                 doctorApproval.setStatus(AppointmentStatus.SCHEDULED.name());
                 break;
 
             case "REJECTED":
                 doctorApproval.setDoctorComments("Appointment Rejected");
+                doctorApproval.setUpdatedAt(DefaultValuesPopulator.getCurrentTimestamp());
                 doctorApproval.setStatus(AppointmentStatus.REJECTED.name());
                 break;
 
             default:
                 doctorApproval.setDoctorComments("Appointment Hold");
-                doctorApproval.setStatus(AppointmentStatus.HOLD.name());
+                doctorApproval.setStatus(AppointmentStatus.PENDING.name());
                 log.warn("Received an unexpected status: {}", status);
                 break;
         }
@@ -134,7 +135,7 @@ public class DoctorServiceImplementation implements DoctorService {
     @Override
     public DoctorApprovalResponse approveSingleAppointment(UUID appointmentId, String status) {
         DoctorApproval doctorApproval = this.doctorApprovalRepository.findByAppointmentId(appointmentId);
-        if (!AppointmentStatus.HOLD.name().equals(doctorApproval.getStatus())) {
+        if (!AppointmentStatus.PENDING.name().equals(doctorApproval.getStatus())) {
             return null;
         }
 
@@ -151,7 +152,17 @@ public class DoctorServiceImplementation implements DoctorService {
 
     @KafkaListener(topics = "appointment-status-update-retry", groupId = "doctor-service-group")
     public void handleAppointmentRetry(String appointmentId) {
-        approveSingleAppointment(UUID.fromString(appointmentId), AppointmentStatus.HOLD.name());
+        approveSingleAppointment(UUID.fromString(appointmentId), AppointmentStatus.PENDING.name());
+    }
+
+    @KafkaListener(topics = "appointment-cancelled-by-appointment-setters", groupId = "doctor-service-group")
+    public void cancelAppointmentOnAppointmentSettersRequest(String appointmentId) {
+        DoctorApproval doctorApproval = this.doctorApprovalRepository.findByAppointmentId(UUID.fromString(appointmentId));
+
+        if (AppointmentStatus.REJECTED.name().equals(doctorApproval.getStatus())) return;
+
+        doctorApproval.setStatus(AppointmentStatus.CANCELED.name());
+        this.doctorApprovalRepository.save(doctorApproval);
     }
 
     private DoctorResponse mapToResponse(Doctor doctor) {

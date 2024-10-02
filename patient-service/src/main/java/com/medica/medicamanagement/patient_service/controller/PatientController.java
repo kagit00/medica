@@ -5,7 +5,7 @@ import com.medica.dto.NotificationResponse;
 import com.medica.medicamanagement.patient_service.dto.PatientRequest;
 import com.medica.medicamanagement.patient_service.dto.PatientResponse;
 import com.medica.medicamanagement.patient_service.models.Patient;
-import com.medica.medicamanagement.patient_service.service.PatientServiceImplementation;
+import com.medica.medicamanagement.patient_service.service.PatientService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
@@ -19,8 +19,7 @@ import java.util.UUID;
 @RequestMapping("/api/patients")
 @AllArgsConstructor
 public class PatientController {
-
-    private final PatientServiceImplementation patientService;
+    private final PatientService patientService;
 
     @PostMapping(value = "/", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PatientResponse> createPatient(@RequestBody PatientRequest patient) {
@@ -51,5 +50,10 @@ public class PatientController {
     @PostMapping(value = "/request-appointment", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<NotificationResponse> requestAppointment(@RequestBody AppointmentRequest request) {
         return new ResponseEntity<>(this.patientService.requestForAppointment(request), HttpStatusCode.valueOf(200));
+    }
+
+    @PutMapping(value = "/cancel-appointment/{appointmentId}", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<NotificationResponse> cancelAppointment(@PathVariable("appointmentId") String appointmentId) {
+        return new ResponseEntity<>(this.patientService.cancelAppointment(appointmentId), HttpStatusCode.valueOf(200));
     }
 }

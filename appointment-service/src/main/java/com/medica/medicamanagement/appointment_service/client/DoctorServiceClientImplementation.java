@@ -1,5 +1,6 @@
 package com.medica.medicamanagement.appointment_service.client;
 
+import com.medica.dto.DoctorResponse;
 import com.medica.dto.NotificationResponse;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -13,9 +14,9 @@ public class DoctorServiceClientImplementation implements DoctorServiceClient {
     }
 
     @Override
-    public void getDoctorById(String id) {
-        webClient.get().uri("/api/doctors/{id}", id)
-                .retrieve().bodyToMono(NotificationResponse.class)
+    public DoctorResponse getDoctorById(String id) {
+        return webClient.get().uri("/api/doctors/{id}", id)
+                .retrieve().bodyToMono(DoctorResponse.class)
                 .block();
     }
 }

@@ -2,7 +2,7 @@ package com.medica.medicamanagement.appointment_service.controller;
 
 import com.medica.dto.AppointmentRequest;
 import com.medica.dto.AppointmentResponse;
-import com.medica.medicamanagement.appointment_service.service.AppointmentServiceImplementation;
+import com.medica.medicamanagement.appointment_service.service.AppointmentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -17,8 +17,7 @@ import java.util.UUID;
 @RequestMapping("/api/appointments")
 @RequiredArgsConstructor
 public class AppointmentController {
-
-    private final AppointmentServiceImplementation appointmentService;
+    private final AppointmentService appointmentService;
 
     @PostMapping(value = "/", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<AppointmentResponse> createAppointment(@RequestBody @Valid AppointmentRequest request) {

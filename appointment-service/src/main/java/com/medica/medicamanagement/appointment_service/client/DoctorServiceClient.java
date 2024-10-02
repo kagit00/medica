@@ -1,7 +1,7 @@
 package com.medica.medicamanagement.appointment_service.client;
 
-import com.medica.dto.NotificationResponse;
+import com.medica.dto.DoctorResponse;
 
 public interface DoctorServiceClient {
-    void getDoctorById(String id);
+    DoctorResponse getDoctorById(String id);
 }
