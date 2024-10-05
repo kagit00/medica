@@ -22,8 +22,8 @@
     <module>appointment-service</module>
     <module>patient-service</module>
     <module>doctor-service</module>
-    <module>notification-service</module>
     <module>common</module>
+    <module>payment-service</module>
   </modules>
 
   <properties>

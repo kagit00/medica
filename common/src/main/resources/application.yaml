@@ -1,8 +1,0 @@
-spring:
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          jwk-set-uri: https://your-keycloak-server/auth/realms/{realm}/protocol/openid-connect/certs
-          issuer-uri: https://your-keycloak-server/auth/realms/{realm}
-          clock-skew: 60s

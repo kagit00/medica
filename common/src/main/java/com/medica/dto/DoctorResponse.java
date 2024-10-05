@@ -15,6 +15,7 @@ import java.util.UUID;
 public class DoctorResponse {
     private UUID id;
     private String name;
+    private String fee;
     private SpecializationResponse specialization;
     private String phone;
     private String email;

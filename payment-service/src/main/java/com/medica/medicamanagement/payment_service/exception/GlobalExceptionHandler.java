@@ -1,4 +1,4 @@
-package com.medica.medicamanagement.patient_service.exception;
+package com.medica.medicamanagement.payment_service.exception;
 
 import com.medica.exception.BadRequestException;
 import com.medica.exception.InternalServerErrorException;
@@ -18,7 +18,7 @@ import java.util.NoSuchElementException;
 /**
  * The type Global exception handler.
  */
-@RestControllerAdvice
+@ControllerAdvice
 public class GlobalExceptionHandler {
 
     /**

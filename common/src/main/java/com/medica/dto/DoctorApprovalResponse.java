@@ -10,6 +10,7 @@ import java.util.UUID;
 @Data
 public class DoctorApprovalResponse {
     private UUID appointmentId;
+    private UUID doctorId;
     private String status;
     private String doctorComments;
 }

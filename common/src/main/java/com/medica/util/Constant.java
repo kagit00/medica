@@ -1,5 +1,8 @@
 package com.medica.util;
 
+import com.medica.dto.AppointmentRequest;
+import com.medica.dto.DoctorResponse;
+
 public final class Constant {
     private Constant() {
         throw new UnsupportedOperationException("");
@@ -29,4 +32,5 @@ public final class Constant {
     }
 
     public static final String DOCTOR_NOT_FOUND = "Doctor not found";
+
 }

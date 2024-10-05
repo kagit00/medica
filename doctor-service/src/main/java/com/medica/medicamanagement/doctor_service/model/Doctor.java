@@ -21,6 +21,8 @@ public class Doctor {
     private UUID id;
     @Column(nullable = false)
     private String name;
+    @Column(nullable = false)
+    private String fee;
     @ManyToOne
     @JoinColumn(name = "specialization_id", nullable = false)
     private Specialization specialization;

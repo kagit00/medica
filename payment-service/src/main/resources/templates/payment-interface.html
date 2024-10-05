@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Payment Page</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f8f9fa; /* Light background */
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            font-weight: thin;
+            color: #343a40;
+            font-size: 24px;
+            text-align: center;
+        }
+
+        #dropin-container {
+            background-color: #ffffff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+            margin-bottom: 20px;
+        }
+
+        #submit-button {
+            background-color: #007bff; /* Bootstrap primary color */
+            color: #ffffff;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 16px; /* Reduced padding */
+            font-size: 16px; /* Smaller font size */
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.3s; /* Transition effects */
+            width: 30%; /* Set width to 30% */
+            margin: 0 auto; /* Center the button */
+            display: block; /* Make the button a block element */
+        }
+
+        #submit-button:hover {
+            background-color: #0056b3; /* Darker shade on hover */
+            transform: translateY(-2px); /* Slight lift effect */
+        }
+
+        .footer {
+            margin-top: 20px;
+            font-size: 14px;
+            color: #6c757d; /* Lighter text color */
+            text-align: center;
+        }
+
+        /* Responsive design */
+        @media (max-width: 480px) {
+            #dropin-container {
+                width: 90%; /* Responsive width for smaller screens */
+            }
+
+            #submit-button {
+                width: 70%; /* Adjust button width for smaller screens */
+            }
+        }
+    </style>
+    <script src="https://js.braintreegateway.com/web/dropin/1.32.0/js/dropin.min.js"></script>
+</head>
+<body>
+<h1>Complete Your Payment</h1>
+<div id="dropin-container"></div>
+<button id="submit-button">Pay Now</button>
+
+<div class="footer">
+    <p>Secure payment processing powered by Braintree.</p>
+</div>
+
+<script type="text/javascript" th:inline="javascript">
+    var clientToken = [[${clientToken}]]
+
+    braintree.dropin.create({
+    authorization: clientToken,
+    container: '#dropin-container',
+    paymentOptionPriority: ['card', 'googlePay', 'applePay'],
+    card: {
+            cardholderName: {
+                required: true
+            },
+            overrides: {
+                fields: {
+                    number: {
+                        placeholder: '4111 1111 1111 1111'
+                    },
+                    cvv: {
+                        placeholder: '123'
+                    },
+                    expirationDate: {
+                        placeholder: 'MM/YY'
+                    }
+                },
+                styles: {
+                    input: {
+                        'font-size': '16px',
+                        'font-family': 'Arial, sans-serif',
+                        'color': '#333'
+                    },
+                    ':focus': {
+                        'color': '#1a73e8'
+                    }
+                }
+            }
+        },
+        googlePay: {
+            googlePayVersion: 2,
+            transactionInfo: {
+                totalPriceStatus: 'FINAL',
+                totalPrice: [[${amount}]],
+                currencyCode: 'USD'
+            },
+        },
+        applePay: {
+            displayName: 'Medica',
+            paymentRequest: {
+                total: {
+                    label: 'Medica',
+                    amount: [[${amount}]]
+                },
+                countryCode: 'US',
+                currencyCode: 'USD',
+                supportedNetworks: ['visa', 'masterCard', 'amex'],
+                merchantCapabilities: ['supports3DS']
+            }
+        }
+}, function (createErr, instance) {
+    if (createErr) {
+        console.error(createErr);
+        return;
+    }
+
+    document.getElementById('submit-button').addEventListener('click', function () {
+        instance.requestPaymentMethod(function (err, payload) {
+            if (err) {
+                console.error(err);
+                return;
+            }
+
+            var paymentMethodType = payload.type;
+
+            fetch('/process', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: 'nonce=' + payload.nonce + '&appointmentId=' + [[${appointmentId}]] + '&amount=' + [[${amount}]] + '&paymentMethod=' + paymentMethodType
+            }).then(function (response) {
+                return response.text();
+            }).then(function (html) {
+                document.body.innerHTML = html;
+            });
+        });
+    });
+});
+</script>
+</body>
+</html>

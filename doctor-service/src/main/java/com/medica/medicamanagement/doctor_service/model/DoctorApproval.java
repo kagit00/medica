@@ -20,6 +20,8 @@ public class DoctorApproval {
     @Column(nullable = false, unique = true)
     private UUID appointmentId;
     @Column(nullable = false)
+    private UUID doctorId;
+    @Column(nullable = false)
     private String status;
     @Column(columnDefinition = "text")
     private String doctorComments;

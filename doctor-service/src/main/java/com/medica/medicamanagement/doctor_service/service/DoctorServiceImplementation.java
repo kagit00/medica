@@ -58,7 +58,7 @@ public class DoctorServiceImplementation implements DoctorService {
                 .build();
 
         Doctor doctor = Doctor.builder()
-                .email(request.getEmail()).phone(request.getPhone()).name(request.getName())
+                .email(request.getEmail()).phone(request.getPhone()).name(request.getName()).fee(request.getFee())
                 .specialization(specialization).createdAt(DefaultValuesPopulator.getCurrentTimestamp()).updatedAt(DefaultValuesPopulator.getCurrentTimestamp())
                 .build();
 
@@ -101,9 +101,11 @@ public class DoctorServiceImplementation implements DoctorService {
         try {
             DoctorApprovalResponse approvalResponse = om.readValue(doctorApprovalResponse, DoctorApprovalResponse.class);
             DoctorApproval approval = DoctorApproval.builder()
+                    .doctorId(approvalResponse.getDoctorId())
                     .appointmentId(approvalResponse.getAppointmentId()).status(AppointmentStatus.PENDING.name()).doctorComments("NA")
-                    .createdAt(com.medica.util.DefaultValuesPopulator.getCurrentTimestamp()).updatedAt(com.medica.util.DefaultValuesPopulator.getCurrentTimestamp())
+                    .createdAt(DefaultValuesPopulator.getCurrentTimestamp()).updatedAt(DefaultValuesPopulator.getCurrentTimestamp())
                     .build();
+
             doctorApprovalRepository.save(approval);
         } catch (Exception e) {
             kafkaTemplate.send(TOPIC, "There is an issue with receiving appointment request. Reason: " + e.getMessage());
@@ -112,10 +114,10 @@ public class DoctorServiceImplementation implements DoctorService {
 
     private void updateAppointmentStatus(DoctorApproval doctorApproval, String status) {
         switch (status) {
-            case "SCHEDULED":
+            case "APPROVED":
                 doctorApproval.setDoctorComments("Appointment Approved");
                 doctorApproval.setUpdatedAt(DefaultValuesPopulator.getCurrentTimestamp());
-                doctorApproval.setStatus(AppointmentStatus.SCHEDULED.name());
+                doctorApproval.setStatus(AppointmentStatus.APPROVED.name());
                 break;
 
             case "REJECTED":
@@ -144,9 +146,12 @@ public class DoctorServiceImplementation implements DoctorService {
 
         DoctorApprovalResponse doctorApprovalResponse = DoctorApprovalResponse.builder()
                         .appointmentId(appointmentId).doctorComments(doctorApproval.getDoctorComments())
-                        .status(doctorApproval.getStatus()).build();
+                .doctorId(doctorApproval.getDoctorId()).status(doctorApproval.getStatus()).build();
 
-        kafkaTemplate.send(TOPIC, BasicUtility.stringifyObject(doctorApprovalResponse));
+        kafkaTemplate.send(TOPIC,
+                BasicUtility.stringifyObject(doctorApprovalResponse) + " <> " +
+                        BasicUtility.stringifyObject(getDoctorById(doctorApproval.getDoctorId()))
+        );
         return doctorApprovalResponse;
     }
 
@@ -178,7 +183,7 @@ public class DoctorServiceImplementation implements DoctorService {
                 .toList();
 
         return DoctorResponse.builder()
-                .id(doctor.getId())
+                .id(doctor.getId()).fee(doctor.getFee())
                 .email(doctor.getEmail()).phone(doctor.getPhone()).name(doctor.getName())
                 .specialization(specializationResponse).availabilities(doctorAvailabilityResponses)
                 .build();

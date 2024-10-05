@@ -10,6 +10,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @NoArgsConstructor
@@ -19,6 +20,7 @@ import java.util.List;
 public class DoctorRequest {
     @Pattern(regexp = "^[A-Za-z ]{2,100}$", message = "Name must contain only letters and spaces, and be between 2 and 100 characters")
     private String name;
+    private String fee;
     @Valid
     private SpecializationRequest specializationRequest;
     @Pattern(regexp = "\\d{10}", message = "Phone number should be 10 digits")

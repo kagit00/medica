@@ -29,7 +29,7 @@ public class PatientServiceImplementation implements PatientService {
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final PatientRepo patientRepo;
     private static final String TOPIC = "appointment_request_by_patient";
-    private final SMSService smsService;
+    private final EmailService emailService;
 
     @Override
     public PatientResponse createPatient(PatientRequest patientRequest) {
@@ -106,16 +106,19 @@ public class PatientServiceImplementation implements PatientService {
         return BasicUtility.generateNotificationResponse("Appointment Request Successfully Sent", HttpStatus.OK.name());
     }
 
-    @KafkaListener(topics = "sms-set-by-appointment-setters", groupId = "patient-service-group")
-    public void receiveAppointmentStatusViaSMS(String appointmentStatusResponse) {
-        String patientId = BasicUtility.readSpecificProperty(appointmentStatusResponse, "patientId");
-        String message = BasicUtility.readSpecificProperty(appointmentStatusResponse, "message");
+    @KafkaListener(topics = "email-set-by-appointment-setters", groupId = "patient-service-group")
+    public void receiveAppointmentStatus(String appointmentStatusResponse) {
+        try {
+            String patientId = BasicUtility.readSpecificProperty(appointmentStatusResponse, "patientId");
 
-        Patient patient = patientRepo.findById(UUID.fromString(patientId)).orElseThrow(
-                () -> new NoSuchElementException("Patient doesn't exist by id: " + patientId)
-        );
+            Patient patient = patientRepo.findById(UUID.fromString(patientId)).orElseThrow(
+                    () -> new NoSuchElementException("Patient doesn't exist by id: " + patientId)
+            );
 
-        smsService.sendSms(patient.getPhone(), message);
+            emailService.sendEmail(patient, appointmentStatusResponse);
+        } catch (Exception e) {
+            log.error("Something went wrong. {}", e.getMessage());
+        }
     }
 
     @Override
