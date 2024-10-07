@@ -1,35 +1,21 @@
 package com.medica.medicamanagement.appointment_service.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.medica.dto.*;
-import com.medica.medicamanagement.appointment_service.client.DoctorServiceClient;
 import com.medica.medicamanagement.appointment_service.dao.AppointmentRepository;
 import com.medica.medicamanagement.appointment_service.model.Appointment;
-import com.medica.medicamanagement.appointment_service.util.EmailContentUtility;
-import com.medica.model.AppointmentStatus;
-import com.medica.util.BasicUtility;
-import com.medica.util.Constant;
-import com.medica.util.DefaultValuesPopulator;
+import com.medica.medicamanagement.appointment_service.util.ResponseMakerUtility;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class AppointmentServiceImplementation implements AppointmentService {
     private final AppointmentRepository appointmentRepository;
-    private final DoctorServiceClient doctorService;
     private final KafkaTemplate<String, String> kafkaTemplate;
-    private final ObjectMapper om = new ObjectMapper();
-    private static final String TOPIC = "appointment_response_by_appointment_setters";
 
     @Override
     public AppointmentResponse createAppointment(AppointmentRequest request) {
@@ -41,13 +27,13 @@ public class AppointmentServiceImplementation implements AppointmentService {
                 .build();
 
         this.appointmentRepository.save(appointment);
-        return mapToResponse(appointment);
+        return ResponseMakerUtility.getAppointmentResponse(appointment);
     }
 
     @Override
     public List<AppointmentResponse> getAllAppointments() {
         List<Appointment> appointments = appointmentRepository.findAll();
-        return appointments.stream().map(this::mapToResponse).toList();
+        return appointments.stream().map(ResponseMakerUtility::getAppointmentResponse).toList();
     }
 
     @Override
@@ -56,7 +42,7 @@ public class AppointmentServiceImplementation implements AppointmentService {
                 () -> new NoSuchElementException("Appointment Not Found With Id: " + id)
         );
 
-        return mapToResponse(appointment);
+        return ResponseMakerUtility.getAppointmentResponse(appointment);
     }
 
     @Override
@@ -71,7 +57,7 @@ public class AppointmentServiceImplementation implements AppointmentService {
         appointment.setStatus(request.getStatus());
 
         this.appointmentRepository.save(appointment);
-        return mapToResponse(appointment);
+        return ResponseMakerUtility.getAppointmentResponse(appointment);
     }
 
     @Override
@@ -80,177 +66,5 @@ public class AppointmentServiceImplementation implements AppointmentService {
                 () -> new NoSuchElementException("Appointment Not Found With Id: " + id)
         );
         this.appointmentRepository.delete(appointment);
-    }
-
-    @KafkaListener(topics = "appointment_request_by_patient", groupId = "appointment-service-group")
-    public void requestDoctorForAppointment(String appointmentRequest) {
-        try {
-            AppointmentRequest request = om.readValue(appointmentRequest, AppointmentRequest.class);
-            DoctorResponse doctorResponse = this.doctorService.getDoctorById(request.getDoctorId().toString());
-
-            if (Objects.isNull(doctorResponse)) {
-                log.info(Constant.DOCTOR_NOT_FOUND);
-                kafkaTemplate.send(
-                        "email-set-by-appointment-setters",
-                        "{" + "patientId: " + request.getPatientId() + ", " +
-                                "message: " + Constant.DOCTOR_NOT_FOUND + "}"
-                );
-                return;
-            }
-
-            boolean isTimeSlotAlreadyTakenByPatient = this.appointmentRepository.existsByTimeRangePatient(request.getPatientId(),
-                    request.getAppointmentDate(), request.getTimeRange().getStartTime(), request.getTimeRange().getEndTime());
-
-            if (isTimeSlotAlreadyTakenByPatient) {
-                log.info(Constant.TIME_ALREADY_TAKEN_BY_PATIENT);
-                kafkaTemplate.send(
-                        "email-set-by-appointment-setters",
-                        "{" + "patientId" + ": " + request.getPatientId() + ", " + "message" + ": " + "Time Range Already Taken" + "}"
-                );
-                return;
-            }
-
-            boolean isTimeSlotAlreadyTakenByDoctor = this.appointmentRepository.existsByTimeRangeDoctor(request.getDoctorId(),
-                    request.getAppointmentDate(), request.getTimeRange().getStartTime(), request.getTimeRange().getEndTime());
-
-            if (isTimeSlotAlreadyTakenByDoctor) {
-                log.info(Constant.getErrorMessageForInvalidTimeRange(doctorResponse.getName()));
-                kafkaTemplate.send(
-                        "email-set-by-appointment-setters",
-                        "{" + "patientId" + ": " + request.getPatientId() + ", " +
-                                "message" + ": "  + Constant.getErrorMessageForInvalidTimeRange(doctorResponse.getName()) + "}"
-                );
-                return;
-            }
-
-            Appointment appointment = Appointment.builder()
-                    .patientId(request.getPatientId()).doctorId(request.getDoctorId()).appointmentDate(request.getAppointmentDate())
-                    .status(AppointmentStatus.REVIEWED.name()).startTime(request.getTimeRange().getStartTime()).endTime(request.getTimeRange().getEndTime())
-                    .createdAt(DefaultValuesPopulator.getCurrentTimestamp()).updatedAt(DefaultValuesPopulator.getCurrentTimestamp())
-                    .build();
-
-            this.appointmentRepository.save(appointment);
-
-            DoctorApprovalResponse doctorApprovalResponse = DoctorApprovalResponse.builder()
-                    .appointmentId(appointment.getId()).doctorId(request.getDoctorId())
-                    .build();
-
-            log.info("Appointment Request is valid. Forwarding it to doctor for approval");
-            kafkaTemplate.send(TOPIC, BasicUtility.stringifyObject(doctorApprovalResponse));
-
-        } catch (Exception e) {
-            kafkaTemplate.send(TOPIC, e.getMessage());
-        }
-    }
-
-    @KafkaListener(topics = "appointment_response_by_doctor", groupId = "appointment-service-group")
-    public void respondToAppointmentRequest(String response) {
-        try {
-            String[] combinedValues = response.split(" <> ");
-            DoctorApprovalResponse approvalResponse = om.readValue(combinedValues[0], DoctorApprovalResponse.class);
-            DoctorResponse doctorResponse = om.readValue(combinedValues[1], DoctorResponse.class);
-
-            UUID appointmentId = approvalResponse.getAppointmentId();
-            Appointment appointment = this.appointmentRepository.findById(appointmentId).orElseThrow(
-                    () -> new NoSuchElementException("Appointment Not Found.")
-            );
-
-            if (AppointmentStatus.APPROVED.name().equals(approvalResponse.getStatus())) {
-                appointment.setStatus(approvalResponse.getStatus());
-
-            } else if (AppointmentStatus.REJECTED.name().equals(approvalResponse.getStatus())) {
-                appointment.setStatus(approvalResponse.getStatus());
-                return;
-
-            } else if (AppointmentStatus.PENDING.name().equals(approvalResponse.getStatus())) {
-                appointment.setStatus(approvalResponse.getStatus());
-                this.appointmentRepository.save(appointment);
-                return;
-
-            } else
-                return;
-
-            appointment.setUpdatedAt(DefaultValuesPopulator.getCurrentTimestamp());
-            this.appointmentRepository.save(appointment);
-
-            String emailContent = EmailContentUtility.getEmailContent(doctorResponse, appointment);
-
-            kafkaTemplate.send(
-                    "email-set-by-appointment-setters",
-                    "{" + "\"patientId\": \"" + appointment.getPatientId() + "\"," + "\"message\": " + emailContent + "}"
-            );
-        } catch (Exception e) {
-            kafkaTemplate.send(TOPIC, e.getMessage());
-        }
-    }
-
-    @KafkaListener(topics = "appointment-payment-status", groupId = "appointment-service-group")
-    public void respondToPaidAndConfirmedAppointment(String response) {
-        String appointmentId = BasicUtility.readSpecificProperty(response, "appointmentId");
-        String status = BasicUtility.readSpecificProperty(response, "status");
-
-        Appointment appointment = this.appointmentRepository.findById(UUID.fromString(appointmentId)).orElse(null);
-
-        if (!Objects.isNull(appointment)) {
-            DoctorResponse doctorResponse = this.doctorService.getDoctorById(appointment.getDoctorId().toString());
-            String emailContent = "";
-
-            appointment.setStatus(
-                    PaymentStatus.SUCCESS.name().equals(status)? AppointmentStatus.SCHEDULED.name() : AppointmentStatus.REJECTED.name()
-            );
-
-            this.appointmentRepository.save(appointment);
-            emailContent = EmailContentUtility.getEmailContent(doctorResponse, appointment);
-
-            kafkaTemplate.send(
-                    "email-set-by-appointment-setters",
-                    "{" + "\"patientId\": \"" + appointment.getPatientId() + "\"," + "\"message\": " + emailContent + "}"
-            );
-        } else {
-            log.error("Something went wrong.");
-        }
-    }
-
-    @Scheduled(cron = "0 0 0 * * ?")
-    public void checkPendingAppointments() {
-        List<Appointment> pendingAppointments = appointmentRepository.findByStatus(AppointmentStatus.PENDING.name());
-
-        int batchSize = 5;
-        int processedCount = 0;
-
-        for (Appointment appointment : pendingAppointments) {
-            if (processedCount >= batchSize) {
-                break;
-            }
-
-            kafkaTemplate.send("appointment-status-update-retry", String.valueOf(appointment.getId()));
-            processedCount++;
-        }
-    }
-
-    @KafkaListener(topics = "appointment-cancelled-by-patient", groupId = "appointment-service-group")
-    public void cancelAppointmentOnPatientRequest(String appointmentId) {
-        Appointment appointment = this.appointmentRepository.findById(UUID.fromString(appointmentId)).orElse(null);
-
-        if (!Objects.isNull(appointment)) {
-            appointment.setStatus(AppointmentStatus.CANCELED.name());
-            appointment.setUpdatedAt(DefaultValuesPopulator.getCurrentTimestamp());
-            appointment.setAppointmentDescription("Appointment Cancelled by Patient ID " + appointment.getPatientId());
-            appointment.setUpdatedAt(DefaultValuesPopulator.getCurrentTimestamp());
-
-            this.appointmentRepository.save(appointment);
-            kafkaTemplate.send("appointment-cancelled-by-appointment-setters", appointmentId);
-            return;
-        }
-        log.error("Appointment id should not be null for appointment cancellation");
-    }
-
-    private AppointmentResponse mapToResponse(Appointment appointment) {
-        return AppointmentResponse.builder()
-                .id(appointment.getId())
-                .patientId(appointment.getPatientId()).doctorId(appointment.getDoctorId())
-                .appointmentDate(appointment.getAppointmentDate()).status(appointment.getStatus())
-                .startTime(appointment.getStartTime()).endTime(appointment.getEndTime())
-                .build();
     }
 }

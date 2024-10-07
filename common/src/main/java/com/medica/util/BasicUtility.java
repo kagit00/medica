@@ -10,6 +10,10 @@ import lombok.extern.slf4j.Slf4j;
 
 
 import java.net.URL;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.Date;
 
 @Slf4j
 public final class BasicUtility {
@@ -41,6 +45,12 @@ public final class BasicUtility {
             log.error("Error reading property: {} from body: {}", prop, body, e);
             return "";
         }
+    }
+
+    public static String toDate(Date appointmentDate) {
+        if (appointmentDate == null) return "";
+        LocalDateTime localDateTime = appointmentDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+        return localDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
     }
 
 

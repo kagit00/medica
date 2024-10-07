@@ -48,4 +48,7 @@ public class CustomTransaction {
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true, mappedBy = "customTransaction")
     @JsonManagedReference
     private Refund refund;
+
+    @Column(name = "updated_at", nullable = false)
+    private String updatedAt;
 }

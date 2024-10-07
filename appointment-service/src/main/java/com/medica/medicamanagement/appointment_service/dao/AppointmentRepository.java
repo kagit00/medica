@@ -26,4 +26,6 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
             "AND a.doctorId = :doctorId " +
             "AND ((a.startTime <= :endTime) AND (a.endTime >= :startTime))")
     boolean existsByTimeRangeDoctor(@Param("doctorId") UUID doctorId, @Param("appointmentDate") Date appointmentDate, @Param("startTime") String startTime, @Param("endTime") String endTime);
+
+
 }

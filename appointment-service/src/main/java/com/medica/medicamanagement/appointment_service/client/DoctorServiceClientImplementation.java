@@ -1,7 +1,8 @@
 package com.medica.medicamanagement.appointment_service.client;
 
 import com.medica.dto.DoctorResponse;
-import com.medica.dto.NotificationResponse;
+import com.medica.exception.InternalServerErrorException;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -9,14 +10,24 @@ import org.springframework.web.reactive.function.client.WebClient;
 public class DoctorServiceClientImplementation implements DoctorServiceClient {
     private final WebClient webClient;
 
+    @Value("${doctors.server.domain}")
+    private String doctorsServerDomain;
+
     public DoctorServiceClientImplementation(WebClient.Builder webClientBuilder) {
-        this.webClient = webClientBuilder.baseUrl("http://localhost:8082").build();
+        this.webClient = webClientBuilder.build();
     }
 
     @Override
     public DoctorResponse getDoctorById(String id) {
-        return webClient.get().uri("/api/doctors/{id}", id)
-                .retrieve().bodyToMono(DoctorResponse.class)
+        if (doctorsServerDomain == null || doctorsServerDomain.isEmpty()) {
+            throw new InternalServerErrorException("doctorsServerDomain property must not be null or empty");
+        }
+
+        return webClient.get()
+                .uri(doctorsServerDomain + "/api/doctors/{id}", id)
+                .retrieve()
+                .bodyToMono(DoctorResponse.class)
                 .block();
     }
 }
+

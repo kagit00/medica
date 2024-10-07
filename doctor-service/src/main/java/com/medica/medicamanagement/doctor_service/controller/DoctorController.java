@@ -1,8 +1,8 @@
 package com.medica.medicamanagement.doctor_service.controller;
 
 import com.medica.dto.DoctorApprovalResponse;
+import com.medica.dto.DoctorResponse;
 import com.medica.medicamanagement.doctor_service.dto.DoctorRequest;
-import com.medica.medicamanagement.doctor_service.dto.DoctorResponse;
 import com.medica.medicamanagement.doctor_service.service.DoctorService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -42,10 +42,5 @@ public class DoctorController {
     public ResponseEntity<DoctorResponse> createDoctor(@PathVariable String id, @RequestBody @Valid DoctorRequest doctor) {
         DoctorResponse response = doctorService.updateDoctor(UUID.fromString(id), doctor);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
-    }
-
-    @PutMapping("/appointment/{appointmentId}/{status}")
-    public ResponseEntity<DoctorApprovalResponse> approveSingleAppointment(@PathVariable("appointmentId") String appointmentId, @PathVariable("status") String status) {
-        return ResponseEntity.ok(this.doctorService.approveSingleAppointment(UUID.fromString(appointmentId), status));
     }
 }

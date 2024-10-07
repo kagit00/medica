@@ -1,11 +1,8 @@
 package com.medica.dto;
 
-import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
-
-import java.time.LocalTime;
 
 
 @Builder

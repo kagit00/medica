@@ -1,6 +1,5 @@
 package com.medica.util;
 
-
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.UUID;

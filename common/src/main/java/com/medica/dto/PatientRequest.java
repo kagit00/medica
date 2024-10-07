@@ -1,4 +1,4 @@
-package com.medica.medicamanagement.patient_service.dto;
+package com.medica.dto;
 
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;

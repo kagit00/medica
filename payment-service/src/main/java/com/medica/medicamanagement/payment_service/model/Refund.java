@@ -9,6 +9,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @Entity
@@ -26,7 +27,7 @@ public class Refund {
     private String refundTransactionId;  // Refund Transaction ID from payment provider
 
     @Column(name = "refund_amount", nullable = false)
-    private double refundAmount;
+    private BigDecimal refundAmount;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
