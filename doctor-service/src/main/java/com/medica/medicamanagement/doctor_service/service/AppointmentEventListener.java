@@ -52,7 +52,7 @@ public class AppointmentEventListener {
         this.appointmentStatusUpdateService.updateAppointmentStatus(UUID.fromString(appointmentId), AppointmentStatus.PENDING.name());
     }
 
-    @KafkaListener(topics = "appointment-cancelled-by-appointment-setters", groupId = "doctor-service-group")
+    @KafkaListener(topics = "appointment-cancelled-by-patient", groupId = "doctor-service-group")
     public void cancelAppointmentOnAppointmentSettersRequest(String appointmentId) {
         DoctorApproval doctorApproval = this.doctorApprovalRepository.findByAppointmentId(UUID.fromString(appointmentId));
 

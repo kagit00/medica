@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f9;
+        color: #333;
+        margin: 0;
+        padding: 0;
+    }
+    .container {
+        max-width: 600px;
+        margin: 20px auto;
+        padding: 20px;
+        background-color: #ffffff;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    .header {
+        text-align: center;
+        padding-bottom: 20px;
+    }
+    .header h1 {
+        color: #4CAF50;
+        margin: 0;
+    }
+    .content {
+        font-size: 16px;
+        line-height: 1.5;
+    }
+    .appointment-details {
+        margin: 20px 0;
+        background-color: #f0f4f7;
+        padding: 15px;
+        border-radius: 5px;
+    }
+    .appointment-details h3 {
+        margin: 0;
+        color: #4CAF50;
+    }
+    .footer {
+        text-align: center;
+        margin-top: 30px;
+        font-size: 14px;
+        color: #999;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <h1>Appointment Confirmation</h1>
+  </div>
+
+  <div class="content">
+    <p>Dear Dr. <span th:text="${name}">[Doctor Name]</span>,</p>
+
+    <p>This is to confirm that the appointment has been approved for the following patient:</p>
+
+    <div class="appointment-details">
+      <h3>Appointment Details</h3>
+      <p><strong>Patient Name:</strong> <span th:text="${patientName}">[Patient Name]</span></p>
+      <p><strong>Date:</strong> <span th:text="${appointmentDate}">[Appointment Date]</span></p>
+      <p><strong>Time:</strong> <span th:text="${startTime}">[Appointment Time]</span></p>
+    </div>
+
+    <p>If you have any questions or need further information, please do not hesitate to reach out.</p>
+
+    <p>Thank you for your dedication to patient care!</p>
+  </div>
+
+  <div class="footer">
+    <p>Best regards,</p>
+    <p>Medica</p>
+    <p><small>This is an automated email, please do not reply directly to this message.</small></p>
+  </div>
+</div>
+
+</body>
+</html>

@@ -25,14 +25,15 @@ public class AppointmentStatusUpdateServiceImplementation implements Appointment
     @Override
     public DoctorApprovalResponse updateAppointmentStatus(UUID appointmentId, String status) {
         DoctorApproval doctorApproval = this.doctorApprovalRepository.findByAppointmentId(appointmentId);
-        if (!AppointmentStatus.PENDING.name().equals(doctorApproval.getStatus())) {
-            return null;
+        DoctorApprovalResponse doctorApprovalResponse = ResponseMakerUtility.getDoctorApprovalResponse(doctorApproval);
+
+        if (AppointmentStatus.CANCELED.name().equals(status)) {
+            kafkaTemplate.send("appointment-cancelled-by-doctor", appointmentId.toString());
+            return doctorApprovalResponse;
         }
 
         updateAppointmentStatus(doctorApproval, status);
         this.doctorApprovalRepository.save(doctorApproval);
-
-        DoctorApprovalResponse doctorApprovalResponse = ResponseMakerUtility.getDoctorApprovalResponse(doctorApproval);
 
         kafkaTemplate.send("appointment_response_by_doctor",
                 BasicUtility.stringifyObject(doctorApprovalResponse) + " <> " +
@@ -54,12 +55,6 @@ public class AppointmentStatusUpdateServiceImplementation implements Appointment
                 doctorApproval.setDoctorComments("Appointment Rejected");
                 doctorApproval.setUpdatedAt(DefaultValuesPopulator.getCurrentTimestamp());
                 doctorApproval.setStatus(AppointmentStatus.REJECTED.name());
-                break;
-
-            case "CANCELED":
-                doctorApproval.setDoctorComments("Appointment Canceled");
-                doctorApproval.setUpdatedAt(DefaultValuesPopulator.getCurrentTimestamp());
-                doctorApproval.setStatus(AppointmentStatus.CANCELED.name());
                 break;
 
             default:

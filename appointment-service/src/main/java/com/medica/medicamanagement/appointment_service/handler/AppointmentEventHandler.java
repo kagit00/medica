@@ -66,7 +66,12 @@ public class AppointmentEventHandler {
     }
 
     @KafkaListener(topics = "appointment-cancelled-by-patient", groupId = "appointment-service-group")
-    public void handleAppointmentCancellation(String appointmentId) {
-        appointmentProcessingService.cancelAppointment(appointmentId);
+    public void handleAppointmentCancellationOnPatientReq(String appointmentId) {
+        appointmentProcessingService.cancelAppointment(appointmentId, true);
+    }
+
+    @KafkaListener(topics = "appointment-cancelled-by-doctor", groupId = "appointment-service-group")
+    public void handleAppointmentCancellationOnDoctorReq(String appointmentId) {
+        appointmentProcessingService.cancelAppointment(appointmentId, false);
     }
 }

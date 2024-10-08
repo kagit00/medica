@@ -9,11 +9,13 @@ import com.medica.dto.NotificationResponse;
 import lombok.extern.slf4j.Slf4j;
 
 
+import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
+import java.util.List;
 
 @Slf4j
 public final class BasicUtility {
@@ -53,6 +55,28 @@ public final class BasicUtility {
         return localDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
     }
 
+    public static <T> T deserializeJson(List<String> values, int index, Class<T> clazz, ObjectMapper om) {
+        if (clazz == null || om == null) {
+            throw new IllegalArgumentException("Class type and ObjectMapper cannot be null");
+        }
+
+        String json = (index < values.size()) ? values.get(index) : null;
+
+        try {
+            return (json != null) ? om.readValue(json, clazz) : createNewInstance(clazz);
+        } catch (Exception e) {
+            log.error("Deserialization failed for index {}", index, e);
+            return createNewInstance(clazz);
+        }
+    }
+
+    private static <T> T createNewInstance(Class<T> clazz) {
+        try {
+            return clazz.getDeclaredConstructor().newInstance();
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+            throw new RuntimeException("Could not create an instance of " + clazz.getSimpleName(), e);
+        }
+    }
 
     public static String getDomainFromUrl(String urlString) {
         try {

@@ -34,7 +34,7 @@ public class AppointmentProcessingServiceImpl implements AppointmentProcessingSe
 
     @Override
     public void handleDoctorResponse(DoctorApprovalResponse approvalResponse, DoctorResponse doctorResponse) {
-        if (!EnumSet.of(AppointmentStatus.CANCELED, AppointmentStatus.REJECTED, AppointmentStatus.APPROVED)
+        if (!EnumSet.of(AppointmentStatus.REJECTED, AppointmentStatus.APPROVED)
                 .contains(AppointmentStatus.valueOf(approvalResponse.getStatus()))) {
             return;
         }
@@ -57,8 +57,8 @@ public class AppointmentProcessingServiceImpl implements AppointmentProcessingSe
     }
 
     @Override
-    public void cancelAppointment(String appointmentId) {
-        this.appointmentCancellationHandler.cancelAppointment(appointmentId);
+    public void cancelAppointment(String appointmentId, boolean isCanceledByPatient) {
+        this.appointmentCancellationHandler.cancelAppointment(appointmentId, isCanceledByPatient);
     }
 
     @Override

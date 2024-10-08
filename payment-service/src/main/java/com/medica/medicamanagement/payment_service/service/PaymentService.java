@@ -35,6 +35,7 @@ public class PaymentService {
         return CustomTransaction.builder().transactionId(result.getTarget().getId())
                 .status(result.isSuccess()? PaymentStatus.SUCCESS : PaymentStatus.FAILED).amount(payment.getAmount())
                 .currency("USD").createdAt(DefaultValuesPopulator.getCurrentTimestamp()).payment(payment)
+                .updatedAt(DefaultValuesPopulator.getCurrentTimestamp())
                 .build();
     }
 

@@ -14,8 +14,8 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.context.Context;
 import org.thymeleaf.spring6.SpringTemplateEngine;
-import java.util.HashMap;
-import java.util.Map;
+
+import java.util.*;
 
 
 @Slf4j
@@ -24,35 +24,32 @@ import java.util.Map;
 public class EmailServiceImplementation implements EmailService {
     private final JavaMailSender mailSender;
     private final SpringTemplateEngine templateEngine;
-    private final ObjectMapper om = new ObjectMapper();
+    private final ObjectMapper om;
 
     @Override
     public void sendEmailToPatient(String response) {
         sendEmail(response, "confirmed-appointment-patient-mail", "payment-action-required",
-                "rejected-appointment-patient-mail", "appointment-cancelled-patient-mail", true);
+                "rejected-appointment-patient-mail", "appointment-canceled-by-doctor-patient-mail", "appointment-cancelled-by-patient-patient-mail",true);
     }
 
     @Override
     public void sendEmailToDoctor(String response) {
         sendEmail(response, "confirmed-appointment-doctor-mail", null,
-                "rejected-appointment-doctor-mail", "appointment-cancelled-doctor-mail", false);
+                "rejected-appointment-doctor-mail", "appointment-cancelled-by-doctor-doctor-mail", "appointment-cancelled-by-patient-doctor-mail",false);
     }
 
     private void sendEmail(String response, String scheduledTemplate, String approvedTemplate,
-                           String rejectedTemplate, String canceledTemplate, boolean isPatient) {
+                           String rejectedTemplate, String canceledByDoctorTemplate, String canceledByPatientTemplate, boolean isPatient) {
         try {
-            String[] combinedValues = response.split(" <> ");
+            String canceledTemplate = "";
+            List<String> combinedValues = Arrays.asList(response.split(" <> "));
 
-            DoctorResponse doctorResponse = (combinedValues.length > 0) ?
-                    om.readValue(combinedValues[0], DoctorResponse.class) : DoctorResponse.builder().build();
+            DoctorResponse doctorResponse = BasicUtility.deserializeJson(combinedValues, 0, DoctorResponse.class, om);
+            PatientResponse patientResponse = BasicUtility.deserializeJson(combinedValues, 1, PatientResponse.class, om);
+            AppointmentResponse appointmentResponse = BasicUtility.deserializeJson(combinedValues, 2, AppointmentResponse.class, om);
+            String paymentLink = combinedValues.size() > 3? combinedValues.get(3) : null;
+            boolean isAppointmentCancelledByPatient = combinedValues.size() > 4 && Boolean.parseBoolean(combinedValues.get(4));
 
-            PatientResponse patientResponse = (combinedValues.length > 1) ?
-                    om.readValue(combinedValues[1], PatientResponse.class) : PatientResponse.builder().build();
-
-            AppointmentResponse appointmentResponse = (combinedValues.length > 2) ?
-                    om.readValue(combinedValues[2], AppointmentResponse.class) : AppointmentResponse.builder().build();
-
-            String paymentLink = (combinedValues.length > 3) ? combinedValues[3] : null; // paymentLink logic restored
             String subject = isPatient ? getSubjectForPatientMail(appointmentResponse.getStatus()) :
                     getSubjectForDoctorMail(appointmentResponse.getStatus());
 
@@ -63,14 +60,11 @@ public class EmailServiceImplementation implements EmailService {
 
             Context context = new Context();
             context.setVariables(templateModel);
+            canceledTemplate = isAppointmentCancelledByPatient? canceledByPatientTemplate : canceledByDoctorTemplate;
 
             String htmlBody = getHtmlBody(appointmentResponse.getStatus(), scheduledTemplate, approvedTemplate, rejectedTemplate, canceledTemplate, context);
+            helper.setTo(isPatient? patientResponse.getEmailId() : doctorResponse.getEmail());
 
-            if (isPatient) {
-                helper.setTo(patientResponse.getEmailId());
-            } else {
-                helper.setTo(doctorResponse.getEmail());
-            }
             helper.setSubject(subject);
             helper.setText(htmlBody, true);
 
@@ -124,7 +118,7 @@ public class EmailServiceImplementation implements EmailService {
             subject = "Your Appointment Rejected";
 
         if (AppointmentStatus.CANCELED.name().equals(appointmentStatus))
-            subject = "Your Appointment Has Been Cancelled Successfully";
+            subject = "Your Appointment Has Been Cancelled";
 
         return subject;
     }
@@ -136,13 +130,13 @@ public class EmailServiceImplementation implements EmailService {
             subject = "You Have a New Scheduled Appointment";
 
         if (AppointmentStatus.APPROVED.name().equals(appointmentStatus))
-            subject = "Appointment Approved Successfully";
+            subject = "Appointment Approved";
 
         if (AppointmentStatus.REJECTED.name().equals(appointmentStatus))
-            subject = "Appointment Rejected Successfully";
+            subject = "Appointment Rejected";
 
         if (AppointmentStatus.CANCELED.name().equals(appointmentStatus))
-            subject = "Patient Has Cancelled Appointment";
+            subject = "Appointment Cancelled";
 
         return subject;
     }

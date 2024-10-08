@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Appointment Cancellation Confirmation</title>
+    <style>
+        body {
+          font-family: 'Arial', sans-serif;
+          background-color: #f4f4f4;
+          margin: 0;
+          padding: 0;
+          color: #333;
+        }
+        .email-container {
+          max-width: 650px;
+          margin: 50px auto;
+          background-color: #ffffff;
+          border-radius: 8px;
+          border: 1px solid #dddddd;
+          box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+          overflow: hidden;
+        }
+        .header {
+          background-color: #ff5a5f; /* Warm red tone */
+          padding: 15px;
+          text-align: center;
+        }
+        .header h2 {
+          color: #ffffff;
+          margin: 0;
+          font-size: 24px;
+          font-weight: bold;
+        }
+        .content {
+          padding: 25px 35px;
+          line-height: 1.6;
+        }
+        h2 {
+          font-size: 20px;
+          color: #444;
+          margin-bottom: 15px;
+        }
+        p {
+          font-size: 16px;
+          color: #555;
+          margin: 10px 0;
+        }
+        .button-container {
+          text-align: center;
+          margin-top: 25px;
+        }
+        .button {
+          display: inline-block;
+          padding: 12px 30px;
+          background-color: #007bff; /* Bright blue */
+          color: #ffffff;
+          text-decoration: none;
+          border-radius: 6px;
+          font-size: 16px;
+          transition: background-color 0.3s ease;
+        }
+        .button:hover {
+          background-color: #0056b3;
+        }
+        .footer {
+          text-align: center;
+          padding: 20px;
+          font-size: 14px;
+          background-color: #f2f2f2;
+          color: #888888;
+          border-top: 1px solid #dddddd;
+        }
+        .footer strong {
+          color: #555555;
+        }
+    </style>
+</head>
+<body>
+
+<div class="email-container">
+    <!-- Header -->
+    <div class="header">
+        <h2>Appointment Cancellation Confirmation</h2>
+    </div>
+
+    <!-- Content -->
+    <div class="content">
+        <p>Dear <span th:text="${name}">[Patient's Name]</span>,</p>
+
+        <p>This is to confirm that your appointment scheduled on <strong th:text="${appointmentDate}">[Appointment Date]</strong> at <strong th:text="${startTime}">[Time]</strong> with <strong th:text="${doctorName}">[Doctor's Name]</strong> has been successfully cancelled at your request.</p>
+
+        <p>If you would like to reschedule or require further assistance, you can visit our website or contact our support team directly. We are here to assist you and hope to serve you soon.</p>
+
+        <div class="button-container">
+            <a href="#" class="button">Reschedule Appointment</a>
+        </div>
+
+        <p>Thank you for choosing our services, and we hope to see you again soon.</p>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <p>This email was sent by Medica Appointment Services.</p>
+        <p>For inquiries, please contact us at <strong>support@medica.com</strong> or call <strong>1-800-MEDICA</strong>.</p>
+    </div>
+</div>
+
+</body>
+</html>
+

@@ -8,6 +8,6 @@ public interface AppointmentProcessingService {
     void handleAppointmentRequest(AppointmentRequest request);
     void handleDoctorResponse(DoctorApprovalResponse response, DoctorResponse doctorResponse);
     void handlePaymentStatus(String appointmentId, String status);
-    void cancelAppointment(String appointmentId);
+    void cancelAppointment(String appointmentId, boolean isCanceledByPatient);
     void handleRefundStatus(String appointmentId, String status);
 }

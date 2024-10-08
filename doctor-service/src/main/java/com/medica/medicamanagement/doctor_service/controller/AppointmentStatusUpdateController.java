@@ -18,7 +18,7 @@ public class AppointmentStatusUpdateController {
     private final AppointmentStatusUpdateService appointmentStatusUpdateService;
 
     @PutMapping("/{appointmentId}/{status}")
-    public ResponseEntity<DoctorApprovalResponse> approveSingleAppointment(@PathVariable("appointmentId") String appointmentId, @PathVariable("status") String status) {
+    public ResponseEntity<DoctorApprovalResponse> updateAppointmentStatus(@PathVariable("appointmentId") String appointmentId, @PathVariable("status") String status) {
         return ResponseEntity.ok(this.appointmentStatusUpdateService.updateAppointmentStatus(UUID.fromString(appointmentId), status));
     }
 }

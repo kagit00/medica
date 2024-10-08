@@ -8,15 +8,12 @@ import com.medica.medicamanagement.appointment_service.client.PatientServiceClie
 import com.medica.medicamanagement.appointment_service.dao.AppointmentRepository;
 import com.medica.medicamanagement.appointment_service.model.Appointment;
 import com.medica.medicamanagement.appointment_service.util.ResponseMakerUtility;
-import com.medica.model.AppointmentStatus;
 import com.medica.util.BasicUtility;
 import com.medica.util.DefaultValuesPopulator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.env.Environment;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
-
-import java.util.EnumSet;
 
 @Service
 @RequiredArgsConstructor
@@ -33,28 +30,20 @@ public class DoctorApprovalHandler {
         appointment.setUpdatedAt(DefaultValuesPopulator.getCurrentTimestamp());
         this.appointmentRepository.save(appointment);
 
-        if (AppointmentStatus.CANCELED.name().equals(approvalResponse.getStatus()) && AppointmentStatus.SCHEDULED.name().equals(appointment.getStatus())) {
-            AppointmentResponse appointmentResponse = ResponseMakerUtility.getAppointmentResponse(appointment);
-            kafkaTemplate.send("appointment-cancelled-by-doctor", BasicUtility.stringifyObject(appointmentResponse));
-        }
-
         notifyPatientAndDoctor(doctorResponse, patientResponse, ResponseMakerUtility.getAppointmentResponse(appointment));
     }
 
     private void notifyPatientAndDoctor(DoctorResponse doctorResponse, PatientResponse patientResponse, AppointmentResponse appointmentResponse) {
         kafkaTemplate.send(
                 "appointment-status-mail-for-patient",
-                BasicUtility.stringifyObject(doctorResponse) + " <> "
-                        + BasicUtility.stringifyObject(patientResponse) + " <> " +
-                        BasicUtility.stringifyObject(appointmentResponse) + " <> "
-                        + env.getProperty("payment.server.domain") + "/payment-interface?appointmentId="
+                BasicUtility.stringifyObject(doctorResponse) + " <> " + BasicUtility.stringifyObject(patientResponse) + " <> " +
+                        BasicUtility.stringifyObject(appointmentResponse) + " <> " + env.getProperty("payment.server.domain") + "/payment-interface?appointmentId="
                         + appointmentResponse.getId() + "&amount=" + doctorResponse.getFee()
         );
 
         kafkaTemplate.send(
                 "appointment-status-mail-for-doctor",
-                BasicUtility.stringifyObject(doctorResponse) + " <> "
-                        + BasicUtility.stringifyObject(patientResponse) + " <> " +
+                BasicUtility.stringifyObject(doctorResponse) + " <> " + BasicUtility.stringifyObject(patientResponse) + " <> " +
                         BasicUtility.stringifyObject(appointmentResponse)
         );
     }

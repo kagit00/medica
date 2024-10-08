@@ -13,18 +13,22 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/patients/appointments")
 @AllArgsConstructor
-public class AppointmentStatusUpdateRequestController {
+public class AppointmentProgressController {
     private final PatientService patientService;
     private final AppointmentStatusUpdateRequestService appointmentStatusUpdateRequestService;
 
 
     @PostMapping(value = "/request-appointment", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<NotificationResponse> requestAppointment(@RequestBody AppointmentRequest request) {
-        return new ResponseEntity<>(this.appointmentStatusUpdateRequestService.requestForAppointment(request), HttpStatusCode.valueOf(200));
+        return new ResponseEntity<>(this.appointmentStatusUpdateRequestService.requestForAppointment(request),
+                HttpStatusCode.valueOf(200)
+        );
     }
 
     @PutMapping(value = "/cancel/{appointmentId}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<NotificationResponse> cancelAppointment(@PathVariable("appointmentId") String appointmentId) {
-        return new ResponseEntity<>(this.appointmentStatusUpdateRequestService.cancelAppointment(appointmentId), HttpStatusCode.valueOf(200));
+        return new ResponseEntity<>(this.appointmentStatusUpdateRequestService.cancelAppointment(appointmentId),
+                HttpStatusCode.valueOf(200)
+        );
     }
 }

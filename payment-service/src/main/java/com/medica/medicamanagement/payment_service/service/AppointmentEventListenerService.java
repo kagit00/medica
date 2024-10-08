@@ -18,7 +18,7 @@ public class AppointmentEventListenerService {
     private final ObjectMapper om;
     private final PaymentRepository paymentRepository;
 
-    @KafkaListener(topics = "appointment-cancelled-by-doctor", groupId = "doctor-service-group")
+    @KafkaListener(topics = "process-refund-to-patient", groupId = "doctor-service-group")
     public void handleAppointmentRetry(String response) {
         try {
             AppointmentResponse appointmentResponse = om.readValue(response, AppointmentResponse.class);

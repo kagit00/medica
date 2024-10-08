@@ -27,43 +27,47 @@ public class AppointmentCancellationHandler {
     private final DoctorServiceClient doctorService;
     private final PatientServiceClient patientService;
 
-    public void cancelAppointment(String appointmentId) {
+    public void cancelAppointment(String appointmentId, boolean isCanceledByPatient) {
         Appointment appointment = appointmentRepository.findById(UUID.fromString(appointmentId)).orElse(null);
 
-        if (!Objects.isNull(appointment)) {
+        if (!Objects.isNull(appointment) && AppointmentStatus.SCHEDULED.name().equals(appointment.getStatus())) {
             appointment.setStatus(AppointmentStatus.CANCELED.name());
             appointment.setUpdatedAt(DefaultValuesPopulator.getCurrentTimestamp());
-            appointment.setAppointmentDescription("Appointment Cancelled by Patient");
+            appointment.setAppointmentDescription(isCanceledByPatient? "Appointment Cancelled by Patient" : "Appointment Cancelled By Doctor");
             appointment.setUpdatedAt(DefaultValuesPopulator.getCurrentTimestamp());
 
             this.appointmentRepository.save(appointment);
-            kafkaTemplate.send("appointment-cancelled-by-appointment-setters", BasicUtility.stringifyObject(appointment));
 
             DoctorResponse doctorResponse = this.doctorService.getDoctorById(appointment.getDoctorId().toString());
             PatientResponse patientResponse = this.patientService.getPatientById(appointment.getPatientId().toString());
 
-            notifyPatientAndDoctor(doctorResponse, patientResponse, appointment);
+            notifyPatientAndDoctor(doctorResponse, patientResponse, appointment, isCanceledByPatient);
+
+            if (!isCanceledByPatient) {
+                kafkaTemplate.send("process-refund-to-patient", BasicUtility.stringifyObject(appointment));
+            }
+
             return;
         }
-        log.error("Appointment id should not be null for appointment cancellation");
+        log.error("Appointment id should not be null or in scheduled state for appointment cancellation");
     }
 
-    private void notifyPatientAndDoctor (DoctorResponse doctorResponse, PatientResponse patientResponse, Appointment appointment) {
+    private void notifyPatientAndDoctor(DoctorResponse doctorResponse, PatientResponse patientResponse, Appointment appointment, boolean isCanceledByPatient) {
         AppointmentResponse appointmentResponse = ResponseMakerUtility.getAppointmentResponse(appointment);
-        kafkaTemplate.send("appointment_response_by_appointment_setters", BasicUtility.stringifyObject(appointmentResponse));
+        if (isCanceledByPatient) {
+            kafkaTemplate.send("appointment-cancelled-by-patient", appointment.getId().toString());
+        }
 
         kafkaTemplate.send(
                 "appointment-status-mail-for-patient",
-                BasicUtility.stringifyObject(doctorResponse) + " <> "
-                        + BasicUtility.stringifyObject(patientResponse) + " <> " +
-                        BasicUtility.stringifyObject(appointmentResponse)
+                BasicUtility.stringifyObject(doctorResponse) + " <> " + BasicUtility.stringifyObject(patientResponse) + " <> " +
+                        BasicUtility.stringifyObject(appointmentResponse) + " <> " + " " + " <> " + isCanceledByPatient
         );
 
         kafkaTemplate.send(
                 "appointment-status-mail-for-doctor",
-                BasicUtility.stringifyObject(doctorResponse) + " <> "
-                        + BasicUtility.stringifyObject(patientResponse) + " <> " +
-                        BasicUtility.stringifyObject(appointmentResponse)
+                BasicUtility.stringifyObject(doctorResponse) + " <> " + BasicUtility.stringifyObject(patientResponse) + " <> " +
+                        BasicUtility.stringifyObject(appointmentResponse) + " <> " + " " + " <> " + isCanceledByPatient
         );
     }
 
