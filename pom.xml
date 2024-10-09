@@ -25,7 +25,8 @@
     <module>common</module>
     <module>payment-service</module>
     <module>notification-service</module>
-      <module>discovery-service</module>
+    <module>discovery-service</module>
+    <module>gateway-service</module>
   </modules>
 
   <properties>
@@ -45,6 +46,5 @@
       </dependency>
     </dependencies>
   </dependencyManagement>
-
 
 </project>

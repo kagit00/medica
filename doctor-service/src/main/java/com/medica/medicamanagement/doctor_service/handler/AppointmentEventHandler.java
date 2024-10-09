@@ -62,6 +62,8 @@ public class AppointmentEventHandler {
             return;
         }
         doctorApproval.setStatus(AppointmentStatus.CANCELED.name());
+        doctorApproval.setDoctorComments("Appointment Cancelled By Patient");
+        doctorApproval.setUpdatedAt(DefaultValuesPopulator.getCurrentTimestamp());
         this.doctorApprovalRepository.save(doctorApproval);
     }
 

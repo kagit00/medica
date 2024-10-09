@@ -45,7 +45,7 @@ public class DoctorApprovalHandler {
     private void notifyPatientAndDoctor(DoctorResponse doctorResponse, PatientResponse patientResponse, AppointmentResponse appointmentResponse) {
 
         String paymentServiceUrl = AppointmentStatus.APPROVED.name().equals(appointmentResponse.getStatus())?
-                UriComponentsBuilder.fromHttpUrl(env.getProperty("payment.server.domain") + "/payment-interface")
+                UriComponentsBuilder.fromHttpUrl(env.getProperty("payment.server.domain") + "/payment/payment-interface")
                 .queryParam("appointmentId", appointmentResponse.getId()).queryParam("amount", doctorResponse.getFee()).toUriString() : "";
 
         kafkaTemplate.send("appointment-status-mail-for-patient", BasicUtility.stringifyObject(doctorResponse) + " <> "

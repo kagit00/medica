@@ -9,10 +9,15 @@
         <option value="$PROJECT_DIR$/payment-service/pom.xml" />
         <option value="$PROJECT_DIR$/../../notification-service/notification-service/notification-service/pom.xml" />
         <option value="$PROJECT_DIR$/notification-service/pom.xml" />
+        <option value="$USER_HOME$/Downloads/gateway-service/gateway-service/gateway-service/pom.xml" />
+        <option value="$PROJECT_DIR$/../../gateway-service/api-gateway-service/pom.xml" />
+        <option value="$PROJECT_DIR$/api-gateway-service/pom.xml" />
       </list>
     </option>
     <option name="ignoredFiles">
       <set>
+        <option value="$USER_HOME$/Downloads/gateway-service/gateway-service/gateway-service/pom.xml" />
+        <option value="$PROJECT_DIR$/api-gateway-service/pom.xml" />
         <option value="$PROJECT_DIR$/../../notification-service/notification-service/notification-service/pom.xml" />
       </set>
     </option>
