@@ -46,7 +46,6 @@ public class AppointmentCancellationHandler {
             if (!isCanceledByPatient) {
                 kafkaTemplate.send("process-refund-to-patient", BasicUtility.stringifyObject(appointment));
             }
-
             return;
         }
         log.error("Appointment id should not be null or in scheduled state for appointment cancellation");

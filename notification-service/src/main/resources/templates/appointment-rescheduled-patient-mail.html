@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Appointment Reschedule Confirmation</title>
+</head>
+<body>
+<h2>Appointment Reschedule Confirmation</h2>
+<p>Dear <span th:text="${name}"></span>,</p>
+
+<p>We are pleased to inform you that your appointment with Dr. <span th:text="${doctorName}"></span> has been successfully rescheduled as per your request.</p>
+
+<p><strong>New Appointment Details:</strong></p>
+<ul>
+    <li><strong>Date:</strong> <span th:text="${appointmentDate}"></span></li>
+    <li><strong>Time:</strong> <span th:text="${startTime}"></span></li>
+    <li><strong>Doctor:</strong> Dr. <span th:text="${doctorName}"></span></li>
+</ul>
+
+<p>If you have any questions or need further assistance, feel free to contact us at <span th:text="${contactEmail}"></span>.</p>
+
+<p>Thank you for choosing our healthcare services.</p>
+
+<p>Best regards,</p>
+<p><strong>Medica</strong></p>
+</body>
+</html>

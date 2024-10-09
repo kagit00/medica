@@ -2,6 +2,7 @@ package com.medica.medicamanagement.appointment_service.handler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.medica.dto.AppointmentRequest;
+import com.medica.dto.AppointmentRescheduleRequest;
 import com.medica.dto.DoctorApprovalResponse;
 import com.medica.dto.DoctorResponse;
 import com.medica.medicamanagement.appointment_service.service.AppointmentProcessingService;
@@ -11,6 +12,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
+import java.util.Arrays;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -24,7 +27,7 @@ public class AppointmentEventHandler {
     public void handleAppointmentRequest(String message) {
         try {
             AppointmentRequest request = om.readValue(message, AppointmentRequest.class);
-            appointmentProcessingService.handleAppointmentRequest(request);
+            appointmentProcessingService.handleAppointmentScheduleRequest(request);
         } catch (Exception e) {
             log.error("Error processing appointment request: {}", e.getMessage());
             kafkaTemplate.send("appointment_response_by_appointment_setters", e.getMessage());
@@ -73,5 +76,13 @@ public class AppointmentEventHandler {
     @KafkaListener(topics = "appointment-cancelled-by-doctor", groupId = "appointment-service-group")
     public void handleAppointmentCancellationOnDoctorReq(String appointmentId) {
         appointmentProcessingService.cancelAppointment(appointmentId, false);
+    }
+
+    @KafkaListener(topics = "appointment-rescheduled-by-patient", groupId = "appointment-service-group")
+    public void rescheduleAppointmentAtPatientReq(String response) {
+        List<String> combinedValues = Arrays.asList(response.split(" <> "));
+        String appointmentId = !combinedValues.isEmpty() ? combinedValues.get(0) : "";
+        AppointmentRescheduleRequest appointmentRescheduleRequest = BasicUtility.deserializeJson(combinedValues, 1, AppointmentRescheduleRequest.class, om);
+        this.appointmentProcessingService.rescheduleAppointment(appointmentId, appointmentRescheduleRequest);
     }
 }

@@ -1,9 +1,10 @@
-package com.medica.medicamanagement.doctor_service.service;
+package com.medica.medicamanagement.doctor_service.handler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.medica.dto.AppointmentResponse;
 import com.medica.medicamanagement.doctor_service.dao.DoctorApprovalRepository;
 import com.medica.medicamanagement.doctor_service.model.DoctorApproval;
+import com.medica.medicamanagement.doctor_service.service.AppointmentProgressService;
 import com.medica.medicamanagement.doctor_service.utils.DefaultValuesPopulator;
 import com.medica.model.AppointmentStatus;
 import lombok.RequiredArgsConstructor;
@@ -17,11 +18,12 @@ import java.util.UUID;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class AppointmentEventListener {
+public class AppointmentEventHandler {
     private final ObjectMapper om;
     private final DoctorApprovalRepository doctorApprovalRepository;
     private final KafkaTemplate<String, String> kafkaTemplate;
-    private final AppointmentStatusUpdateService appointmentStatusUpdateService;
+    private final AppointmentProgressService appointmentProgressService;
+    private final AppointmentRescheduleHandler appointmentRescheduleHandler;
 
     @KafkaListener(topics = "appointment_response_by_appointment_setters", groupId = "doctor-service-group")
     public void respondToAppointmentRequest(String response) {
@@ -40,6 +42,7 @@ public class AppointmentEventListener {
             } else {
                 existingApproval.setStatus(appointmentResponse.getStatus());
                 existingApproval.setDoctorComments(appointmentResponse.getStatus());
+                existingApproval.setUpdatedAt(DefaultValuesPopulator.getCurrentTimestamp());
                 this.doctorApprovalRepository.save(existingApproval);
             }
         } catch (Exception e) {
@@ -49,16 +52,21 @@ public class AppointmentEventListener {
 
     @KafkaListener(topics = "appointment-status-update-retry", groupId = "doctor-service-group")
     public void handleAppointmentRetry(String appointmentId) {
-        this.appointmentStatusUpdateService.updateAppointmentStatus(UUID.fromString(appointmentId), AppointmentStatus.PENDING.name());
+        this.appointmentProgressService.updateAppointmentStatus(UUID.fromString(appointmentId), AppointmentStatus.PENDING.name());
     }
 
     @KafkaListener(topics = "appointment-cancelled-by-patient", groupId = "doctor-service-group")
     public void cancelAppointmentOnAppointmentSettersRequest(String appointmentId) {
         DoctorApproval doctorApproval = this.doctorApprovalRepository.findByAppointmentId(UUID.fromString(appointmentId));
-
-        if (AppointmentStatus.REJECTED.name().equals(doctorApproval.getStatus())) return;
-
+        if (AppointmentStatus.REJECTED.name().equals(doctorApproval.getStatus())) {
+            return;
+        }
         doctorApproval.setStatus(AppointmentStatus.CANCELED.name());
         this.doctorApprovalRepository.save(doctorApproval);
+    }
+
+    @KafkaListener(topics = "appointment-rescheduled-by-patient", groupId = "doctor-service-group")
+    public void handleAppointmentRescheduleAtPatientReq(String response) {
+        this.appointmentRescheduleHandler.handleRescheduleAppointmentAtPatientReq(response);
     }
 }

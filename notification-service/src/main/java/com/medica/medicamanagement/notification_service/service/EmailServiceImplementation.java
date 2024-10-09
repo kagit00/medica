@@ -28,17 +28,31 @@ public class EmailServiceImplementation implements EmailService {
 
     @Override
     public void sendEmailToPatient(String response) {
-        sendEmail(response, "confirmed-appointment-patient-mail", "payment-action-required",
-                "rejected-appointment-patient-mail", "appointment-canceled-by-doctor-patient-mail", "appointment-cancelled-by-patient-patient-mail",true);
+        sendEmail(response,
+                "confirmed-appointment-patient-mail",
+                "appointment-rescheduled-patient-mail",
+                "payment-action-required",
+                "rejected-appointment-patient-mail",
+                "appointment-canceled-by-doctor-patient-mail",
+                "appointment-cancelled-by-patient-patient-mail",
+                true
+        );
     }
 
     @Override
     public void sendEmailToDoctor(String response) {
-        sendEmail(response, "confirmed-appointment-doctor-mail", null,
-                "rejected-appointment-doctor-mail", "appointment-cancelled-by-doctor-doctor-mail", "appointment-cancelled-by-patient-doctor-mail",false);
+        sendEmail(response,
+                "confirmed-appointment-doctor-mail",
+                "appointment-rescheduled-doctor-mail",
+                null,
+                "rejected-appointment-doctor-mail",
+                "appointment-cancelled-by-doctor-doctor-mail",
+                "appointment-cancelled-by-patient-doctor-mail",
+                false
+        );
     }
 
-    private void sendEmail(String response, String scheduledTemplate, String approvedTemplate,
+    private void sendEmail(String response, String scheduledTemplate, String rescheduledTemplate, String approvedTemplate,
                            String rejectedTemplate, String canceledByDoctorTemplate, String canceledByPatientTemplate, boolean isPatient) {
         try {
             String canceledTemplate = "";
@@ -62,7 +76,7 @@ public class EmailServiceImplementation implements EmailService {
             context.setVariables(templateModel);
             canceledTemplate = isAppointmentCancelledByPatient? canceledByPatientTemplate : canceledByDoctorTemplate;
 
-            String htmlBody = getHtmlBody(appointmentResponse.getStatus(), scheduledTemplate, approvedTemplate, rejectedTemplate, canceledTemplate, context);
+            String htmlBody = getHtmlBody(appointmentResponse.getStatus(), scheduledTemplate, rescheduledTemplate, approvedTemplate, rejectedTemplate, canceledTemplate, context);
             helper.setTo(isPatient? patientResponse.getEmailId() : doctorResponse.getEmail());
 
             helper.setSubject(subject);
@@ -94,10 +108,11 @@ public class EmailServiceImplementation implements EmailService {
         return templateModel;
     }
 
-    private String getHtmlBody(String status, String scheduledTemplate, String approvedTemplate,
+    private String getHtmlBody(String status, String scheduledTemplate, String rescheduledTemplate, String approvedTemplate,
                                String rejectedTemplate, String canceledTemplate, Context context) {
         return switch (status) {
             case "SCHEDULED" -> templateEngine.process(scheduledTemplate, context);
+            case "RESCHEDULED" -> templateEngine.process(rescheduledTemplate, context);
             case "APPROVED" -> approvedTemplate != null ? templateEngine.process(approvedTemplate, context) : "";
             case "REJECTED" -> templateEngine.process(rejectedTemplate, context);
             case "CANCELED" -> templateEngine.process(canceledTemplate, context);

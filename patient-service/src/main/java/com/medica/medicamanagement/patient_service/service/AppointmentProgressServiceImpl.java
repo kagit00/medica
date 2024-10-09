@@ -1,6 +1,7 @@
 package com.medica.medicamanagement.patient_service.service;
 
 import com.medica.dto.AppointmentRequest;
+import com.medica.dto.AppointmentRescheduleRequest;
 import com.medica.dto.NotificationResponse;
 import com.medica.exception.BadRequestException;
 import com.medica.medicamanagement.patient_service.dao.PatientRepo;
@@ -12,14 +13,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
-
 import java.util.Objects;
 import java.util.UUID;
 
 @Service
 @AllArgsConstructor
 @Slf4j
-public class AppointmentStatusUpdateRequestServiceImpl implements AppointmentStatusUpdateRequestService {
+public class AppointmentProgressServiceImpl implements AppointmentProgressService {
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final PatientRepo patientRepo;
 
@@ -43,5 +43,11 @@ public class AppointmentStatusUpdateRequestServiceImpl implements AppointmentSta
     public NotificationResponse cancelAppointment(String appointmentId) {
         kafkaTemplate.send("appointment-cancelled-by-patient", appointmentId);
         return BasicUtility.generateNotificationResponse("Appointment Cancelled Successfully By Patient", HttpStatus.OK.name());
+    }
+
+    @Override
+    public NotificationResponse rescheduleAppointment(String appointmentId, AppointmentRescheduleRequest appointmentRescheduleRequest) {
+        kafkaTemplate.send("appointment-rescheduled-by-patient", appointmentId + " <> " + BasicUtility.stringifyObject(appointmentRescheduleRequest));
+        return BasicUtility.generateNotificationResponse("Appointment Rescheduled Successfully By Patient", HttpStatus.OK.name());
     }
 }

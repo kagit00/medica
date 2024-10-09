@@ -17,7 +17,7 @@ import java.util.UUID;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class AppointmentStatusUpdateServiceImplementation implements AppointmentStatusUpdateService {
+public class AppointmentProgressServiceImplementation implements AppointmentProgressService {
     private final DoctorApprovalRepository doctorApprovalRepository;
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final DoctorServiceImplementation doctorService;
@@ -25,21 +25,19 @@ public class AppointmentStatusUpdateServiceImplementation implements Appointment
     @Override
     public DoctorApprovalResponse updateAppointmentStatus(UUID appointmentId, String status) {
         DoctorApproval doctorApproval = this.doctorApprovalRepository.findByAppointmentId(appointmentId);
-        DoctorApprovalResponse doctorApprovalResponse = ResponseMakerUtility.getDoctorApprovalResponse(doctorApproval);
-
-        if (AppointmentStatus.CANCELED.name().equals(status)) {
-            kafkaTemplate.send("appointment-cancelled-by-doctor", appointmentId.toString());
-            return doctorApprovalResponse;
-        }
 
         updateAppointmentStatus(doctorApproval, status);
         this.doctorApprovalRepository.save(doctorApproval);
 
-        kafkaTemplate.send("appointment_response_by_doctor",
-                BasicUtility.stringifyObject(doctorApprovalResponse) + " <> " +
-                        BasicUtility.stringifyObject(doctorService.getDoctorById(doctorApproval.getDoctorId()))
-        );
+        DoctorApprovalResponse doctorApprovalResponse = ResponseMakerUtility.getDoctorApprovalResponse(doctorApproval);
 
+        if (AppointmentStatus.CANCELED.name().equals(doctorApprovalResponse.getStatus())) {
+            kafkaTemplate.send("appointment-cancelled-by-doctor", doctorApprovalResponse.getAppointmentId().toString());
+        } else {
+            kafkaTemplate.send("appointment_response_by_doctor", BasicUtility.stringifyObject(doctorApprovalResponse) + " <> " +
+                    BasicUtility.stringifyObject(doctorService.getDoctorById(doctorApproval.getDoctorId()))
+            );
+        }
         return doctorApprovalResponse;
     }
 
@@ -55,6 +53,16 @@ public class AppointmentStatusUpdateServiceImplementation implements Appointment
                 doctorApproval.setDoctorComments("Appointment Rejected");
                 doctorApproval.setUpdatedAt(DefaultValuesPopulator.getCurrentTimestamp());
                 doctorApproval.setStatus(AppointmentStatus.REJECTED.name());
+                break;
+
+            case "CANCELED":
+                if (!AppointmentStatus.SCHEDULED.name().equals(doctorApproval.getStatus())) {
+                    log.error("Appointment should be in scheduled state for cancellation");
+                    return;
+                }
+                doctorApproval.setDoctorComments("Appointment Canceled");
+                doctorApproval.setUpdatedAt(DefaultValuesPopulator.getCurrentTimestamp());
+                doctorApproval.setStatus(AppointmentStatus.CANCELED.name());
                 break;
 
             default:

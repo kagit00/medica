@@ -24,21 +24,16 @@ public class PaymentStatusHandler {
     private final KafkaTemplate<String, String> kafkaTemplate;
 
     public void notifyPatientAndDoctor(Appointment appointment, DoctorResponse doctorResponse, PatientResponse patientResponse) {
+
         AppointmentResponse appointmentResponse = ResponseMakerUtility.getAppointmentResponse(appointment);
         kafkaTemplate.send("appointment_response_by_appointment_setters", BasicUtility.stringifyObject(appointmentResponse));
 
-        kafkaTemplate.send(
-                "appointment-status-mail-for-patient",
-                BasicUtility.stringifyObject(doctorResponse) + " <> "
-                        + BasicUtility.stringifyObject(patientResponse) + " <> " +
-                        BasicUtility.stringifyObject(appointmentResponse)
+        kafkaTemplate.send("appointment-status-mail-for-patient", BasicUtility.stringifyObject(doctorResponse) + " <> "
+                + BasicUtility.stringifyObject(patientResponse) + " <> " + BasicUtility.stringifyObject(appointmentResponse)
         );
 
-        kafkaTemplate.send(
-                "appointment-status-mail-for-doctor",
-                BasicUtility.stringifyObject(doctorResponse) + " <> "
-                        + BasicUtility.stringifyObject(patientResponse) + " <> " +
-                        BasicUtility.stringifyObject(appointmentResponse)
+        kafkaTemplate.send("appointment-status-mail-for-doctor", BasicUtility.stringifyObject(doctorResponse) + " <> "
+                + BasicUtility.stringifyObject(patientResponse) + " <> " + BasicUtility.stringifyObject(appointmentResponse)
         );
     }
 

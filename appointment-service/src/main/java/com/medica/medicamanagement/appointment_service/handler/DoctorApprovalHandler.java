@@ -8,12 +8,14 @@ import com.medica.medicamanagement.appointment_service.client.PatientServiceClie
 import com.medica.medicamanagement.appointment_service.dao.AppointmentRepository;
 import com.medica.medicamanagement.appointment_service.model.Appointment;
 import com.medica.medicamanagement.appointment_service.util.ResponseMakerUtility;
+import com.medica.model.AppointmentStatus;
 import com.medica.util.BasicUtility;
 import com.medica.util.DefaultValuesPopulator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.env.Environment;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.web.util.UriComponentsBuilder;
 
 @Service
 @RequiredArgsConstructor
@@ -23,10 +25,16 @@ public class DoctorApprovalHandler {
     private final AppointmentRepository appointmentRepository;
     private final PatientServiceClient patientService;
 
+
     public void updateAppointmentStatusAndNotify(DoctorResponse doctorResponse, Appointment appointment, DoctorApprovalResponse approvalResponse) {
         PatientResponse patientResponse = this.patientService.getPatientById(appointment.getPatientId().toString());
 
-        appointment.setStatus(approvalResponse.getStatus());
+        if (AppointmentStatus.RESCHEDULE_REQUESTED.name().equals(appointment.getStatus()) && AppointmentStatus.APPROVED.name().equals(approvalResponse.getStatus())) {
+            appointment.setStatus(AppointmentStatus.RESCHEDULED.name());
+        } else {
+            appointment.setStatus(approvalResponse.getStatus());
+        }
+
         appointment.setUpdatedAt(DefaultValuesPopulator.getCurrentTimestamp());
         this.appointmentRepository.save(appointment);
 
@@ -34,11 +42,15 @@ public class DoctorApprovalHandler {
     }
 
     private void notifyPatientAndDoctor(DoctorResponse doctorResponse, PatientResponse patientResponse, AppointmentResponse appointmentResponse) {
+
+        String paymentServiceUrl = AppointmentStatus.APPROVED.name().equals(appointmentResponse.getStatus())?
+                UriComponentsBuilder.fromHttpUrl(env.getProperty("payment.server.domain") + "/payment-interface")
+                .queryParam("appointmentId", appointmentResponse.getId()).queryParam("amount", doctorResponse.getFee()).toUriString() : "";
+
         kafkaTemplate.send(
                 "appointment-status-mail-for-patient",
                 BasicUtility.stringifyObject(doctorResponse) + " <> " + BasicUtility.stringifyObject(patientResponse) + " <> " +
-                        BasicUtility.stringifyObject(appointmentResponse) + " <> " + env.getProperty("payment.server.domain") + "/payment-interface?appointmentId="
-                        + appointmentResponse.getId() + "&amount=" + doctorResponse.getFee()
+                        BasicUtility.stringifyObject(appointmentResponse) + " <> " + paymentServiceUrl
         );
 
         kafkaTemplate.send(

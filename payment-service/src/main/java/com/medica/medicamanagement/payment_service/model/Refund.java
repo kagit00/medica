@@ -39,6 +39,9 @@ public class Refund {
     @Column(name = "created_at", nullable = false)
     private String createdAt;
 
+    @Column(name = "updated_at")
+    private String updatedAt;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JsonIgnore
     @JoinColumn(name = "transaction_id", nullable = false)

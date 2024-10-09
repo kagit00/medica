@@ -1,9 +1,8 @@
-package com.medica.medicamanagement.payment_service.service;
+package com.medica.medicamanagement.payment_service.handler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.medica.dto.AppointmentResponse;
 import com.medica.medicamanagement.payment_service.dao.PaymentRepository;
-import com.medica.medicamanagement.payment_service.handler.RefundHandler;
 import com.medica.medicamanagement.payment_service.model.Payment;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,7 +12,7 @@ import org.springframework.stereotype.Service;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class AppointmentEventListenerService {
+public class AppointmentEventHandler {
     private final RefundHandler refundHandler;
     private final ObjectMapper om;
     private final PaymentRepository paymentRepository;

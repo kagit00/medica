@@ -1,4 +1,4 @@
-package com.medica.medicamanagement.appointment_service.service;
+package com.medica.medicamanagement.appointment_service.handler;
 
 import com.medica.medicamanagement.appointment_service.dao.AppointmentRepository;
 import com.medica.medicamanagement.appointment_service.model.Appointment;
@@ -8,17 +8,19 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class AppointmentStatusUpdateRetryService {
+public class AppointmentStatusUpdateRetryHandler {
     private final AppointmentRepository appointmentRepository;
     private final KafkaTemplate<String, String> kafkaTemplate;
 
     @Scheduled(cron = "0 0 0 * * ?")
+    @Transactional
     public void checkPendingAppointments() {
         List<Appointment> pendingAppointments = appointmentRepository.findByStatus(AppointmentStatus.PENDING.name());
 

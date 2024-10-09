@@ -2,10 +2,7 @@ package com.medica.medicamanagement.appointment_service.service;
 
 import com.medica.dto.*;
 import com.medica.medicamanagement.appointment_service.dao.AppointmentRepository;
-import com.medica.medicamanagement.appointment_service.handler.AppointmentCancellationHandler;
-import com.medica.medicamanagement.appointment_service.handler.AppointmentRequestHandler;
-import com.medica.medicamanagement.appointment_service.handler.DoctorApprovalHandler;
-import com.medica.medicamanagement.appointment_service.handler.PaymentStatusHandler;
+import com.medica.medicamanagement.appointment_service.handler.*;
 import com.medica.medicamanagement.appointment_service.model.Appointment;
 import com.medica.model.AppointmentStatus;
 import lombok.RequiredArgsConstructor;
@@ -22,14 +19,15 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class AppointmentProcessingServiceImpl implements AppointmentProcessingService {
     private final AppointmentRepository appointmentRepository;
-    private final AppointmentRequestHandler appointmentRequestHandler;
+    private final AppointmentScheduleHandler appointmentScheduleHandler;
     private final DoctorApprovalHandler doctorApprovalHandler;
     private final PaymentStatusHandler paymentStatusHandler;
     private final AppointmentCancellationHandler appointmentCancellationHandler;
+    private final AppointmentRescheduleHandler appointmentRescheduleHandler;
 
     @Override
-    public void handleAppointmentRequest(AppointmentRequest request) {
-        this.appointmentRequestHandler.processAppointmentAndNotify(request);
+    public void handleAppointmentScheduleRequest(AppointmentRequest request) {
+        this.appointmentScheduleHandler.processAppointmentAndNotify(request);
     }
 
     @Override
@@ -38,12 +36,10 @@ public class AppointmentProcessingServiceImpl implements AppointmentProcessingSe
                 .contains(AppointmentStatus.valueOf(approvalResponse.getStatus()))) {
             return;
         }
-
         UUID appointmentId = approvalResponse.getAppointmentId();
         Appointment appointment = appointmentRepository.findById(appointmentId).orElseThrow(
                 () -> new NoSuchElementException("Appointment Not Found.")
         );
-
         this.doctorApprovalHandler.updateAppointmentStatusAndNotify(doctorResponse, appointment, approvalResponse);
     }
 
@@ -64,5 +60,10 @@ public class AppointmentProcessingServiceImpl implements AppointmentProcessingSe
     @Override
     public void handleRefundStatus(String appointmentId, String status) {
         this.appointmentCancellationHandler.notifyRefundStatusToPatient(appointmentId, status);
+    }
+
+    @Override
+    public void rescheduleAppointment(String appointmentId, AppointmentRescheduleRequest appointmentRescheduleRequest) {
+        this.appointmentRescheduleHandler.rescheduleAppointment(appointmentId, appointmentRescheduleRequest);
     }
 }

@@ -20,7 +20,7 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class AppointmentRequestHandler {
+public class AppointmentScheduleHandler {
     private final AppointmentRepository appointmentRepository;
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final DoctorServiceClient doctorService;
@@ -30,7 +30,10 @@ public class AppointmentRequestHandler {
         DoctorResponse doctorResponse = doctorService.getDoctorById(request.getDoctorId().toString());
         PatientResponse patientResponse = patientService.getPatientById(request.getPatientId().toString());
 
-        if (!ValidationUtility.isValid(request, doctorResponse, patientResponse, appointmentRepository)) return;
+        if (!ValidationUtility.isValid(request, doctorResponse, patientResponse, appointmentRepository)) {
+            log.error("Appointment Request Not Valid");
+            return;
+        }
 
         Appointment appointment = Appointment.builder()
                 .patientId(request.getPatientId()).doctorId(request.getDoctorId()).appointmentDate(request.getAppointmentDate())

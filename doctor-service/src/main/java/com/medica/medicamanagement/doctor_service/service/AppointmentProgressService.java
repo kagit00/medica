@@ -4,6 +4,6 @@ import com.medica.dto.DoctorApprovalResponse;
 
 import java.util.UUID;
 
-public interface AppointmentStatusUpdateService {
+public interface AppointmentProgressService {
     DoctorApprovalResponse updateAppointmentStatus(UUID appointmentId, String status);
 }
