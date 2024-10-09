@@ -18,6 +18,5 @@ public class AppointmentRescheduleRequest {
     @Future(message = "Appointment date must be in the future")
     private Date appointmentDate;
     @NotNull(message = "Time range is required")
-    @Valid
     private TimeRange timeRange;
 }

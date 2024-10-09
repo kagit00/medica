@@ -29,8 +29,9 @@ public class DoctorApprovalHandler {
     public void updateAppointmentStatusAndNotify(DoctorResponse doctorResponse, Appointment appointment, DoctorApprovalResponse approvalResponse) {
         PatientResponse patientResponse = this.patientService.getPatientById(appointment.getPatientId().toString());
 
-        if (AppointmentStatus.RESCHEDULE_REQUESTED.name().equals(appointment.getStatus()) && AppointmentStatus.APPROVED.name().equals(approvalResponse.getStatus())) {
+        if (AppointmentStatus.RESCHEDULE_REQUESTED.name().equals(appointment.getStatus()) && AppointmentStatus.RESCHEDULED.name().equals(approvalResponse.getStatus())) {
             appointment.setStatus(AppointmentStatus.RESCHEDULED.name());
+            appointment.setAppointmentDescription("Appointment Rescheduled");
         } else {
             appointment.setStatus(approvalResponse.getStatus());
         }
@@ -47,16 +48,13 @@ public class DoctorApprovalHandler {
                 UriComponentsBuilder.fromHttpUrl(env.getProperty("payment.server.domain") + "/payment-interface")
                 .queryParam("appointmentId", appointmentResponse.getId()).queryParam("amount", doctorResponse.getFee()).toUriString() : "";
 
-        kafkaTemplate.send(
-                "appointment-status-mail-for-patient",
-                BasicUtility.stringifyObject(doctorResponse) + " <> " + BasicUtility.stringifyObject(patientResponse) + " <> " +
-                        BasicUtility.stringifyObject(appointmentResponse) + " <> " + paymentServiceUrl
+        kafkaTemplate.send("appointment-status-mail-for-patient", BasicUtility.stringifyObject(doctorResponse) + " <> "
+                + BasicUtility.stringifyObject(patientResponse) + " <> " + BasicUtility.stringifyObject(appointmentResponse) + " <> "
+                + paymentServiceUrl
         );
 
-        kafkaTemplate.send(
-                "appointment-status-mail-for-doctor",
-                BasicUtility.stringifyObject(doctorResponse) + " <> " + BasicUtility.stringifyObject(patientResponse) + " <> " +
-                        BasicUtility.stringifyObject(appointmentResponse)
+        kafkaTemplate.send("appointment-status-mail-for-doctor", BasicUtility.stringifyObject(doctorResponse) + " <> "
+                + BasicUtility.stringifyObject(patientResponse) + " <> " + BasicUtility.stringifyObject(appointmentResponse)
         );
     }
 }

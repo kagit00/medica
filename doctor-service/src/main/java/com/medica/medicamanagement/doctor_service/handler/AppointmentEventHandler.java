@@ -65,7 +65,7 @@ public class AppointmentEventHandler {
         this.doctorApprovalRepository.save(doctorApproval);
     }
 
-    @KafkaListener(topics = "appointment-rescheduled-by-patient", groupId = "doctor-service-group")
+    @KafkaListener(topics = "appointment-rescheduled-by-appointment-setters-at-patient-request", groupId = "doctor-service-group")
     public void handleAppointmentRescheduleAtPatientReq(String response) {
         this.appointmentRescheduleHandler.handleRescheduleAppointmentAtPatientReq(response);
     }

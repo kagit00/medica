@@ -6,6 +6,7 @@ import com.medica.dto.AppointmentRescheduleRequest;
 import com.medica.dto.DoctorApprovalResponse;
 import com.medica.dto.DoctorResponse;
 import com.medica.medicamanagement.appointment_service.service.AppointmentProcessingService;
+import com.medica.medicamanagement.appointment_service.util.ValidationUtility;
 import com.medica.util.BasicUtility;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -83,6 +84,7 @@ public class AppointmentEventHandler {
         List<String> combinedValues = Arrays.asList(response.split(" <> "));
         String appointmentId = !combinedValues.isEmpty() ? combinedValues.get(0) : "";
         AppointmentRescheduleRequest appointmentRescheduleRequest = BasicUtility.deserializeJson(combinedValues, 1, AppointmentRescheduleRequest.class, om);
+
         this.appointmentProcessingService.rescheduleAppointment(appointmentId, appointmentRescheduleRequest);
     }
 }

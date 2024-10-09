@@ -25,10 +25,7 @@ public class AppointmentProgressServiceImplementation implements AppointmentProg
     @Override
     public DoctorApprovalResponse updateAppointmentStatus(UUID appointmentId, String status) {
         DoctorApproval doctorApproval = this.doctorApprovalRepository.findByAppointmentId(appointmentId);
-
         updateAppointmentStatus(doctorApproval, status);
-        this.doctorApprovalRepository.save(doctorApproval);
-
         DoctorApprovalResponse doctorApprovalResponse = ResponseMakerUtility.getDoctorApprovalResponse(doctorApproval);
 
         if (AppointmentStatus.CANCELED.name().equals(doctorApprovalResponse.getStatus())) {
@@ -42,27 +39,38 @@ public class AppointmentProgressServiceImplementation implements AppointmentProg
     }
 
     private void updateAppointmentStatus(DoctorApproval doctorApproval, String status) {
+        String currentStatus = doctorApproval.getStatus();
         switch (status) {
             case "APPROVED":
-                doctorApproval.setDoctorComments("Appointment Approved");
-                doctorApproval.setUpdatedAt(DefaultValuesPopulator.getCurrentTimestamp());
-                doctorApproval.setStatus(AppointmentStatus.APPROVED.name());
+                if (AppointmentStatus.RESCHEDULE_REQUESTED.name().equals(currentStatus)) {
+                    doctorApproval.setDoctorComments("Appointment Rescheduled");
+                    doctorApproval.setStatus(AppointmentStatus.RESCHEDULED.name());
+                } else if (AppointmentStatus.PENDING.name().equals(currentStatus) || AppointmentStatus.REVIEWED.name().equals(currentStatus)) {
+                    doctorApproval.setDoctorComments("Appointment Approved");
+                    doctorApproval.setStatus(AppointmentStatus.APPROVED.name());
+                } else {
+                    log.error("Unknown status request for approval .");
+                    return;
+                }
                 break;
 
             case "REJECTED":
+                if (AppointmentStatus.RESCHEDULED.name().equals(currentStatus) || AppointmentStatus.SCHEDULED.name().equals(currentStatus) || AppointmentStatus.APPROVED.name().equals(currentStatus)) {
+                    log.error("Rescheduled or Scheduled or Approved appointments cannot be rejected.");
+                    return;
+                }
                 doctorApproval.setDoctorComments("Appointment Rejected");
-                doctorApproval.setUpdatedAt(DefaultValuesPopulator.getCurrentTimestamp());
                 doctorApproval.setStatus(AppointmentStatus.REJECTED.name());
                 break;
 
             case "CANCELED":
-                if (!AppointmentStatus.SCHEDULED.name().equals(doctorApproval.getStatus())) {
-                    log.error("Appointment should be in scheduled state for cancellation");
+                if (AppointmentStatus.SCHEDULED.name().equals(currentStatus) || AppointmentStatus.RESCHEDULED.name().equals(currentStatus)) {
+                    doctorApproval.setDoctorComments("Appointment Canceled");
+                    doctorApproval.setStatus(AppointmentStatus.CANCELED.name());
+                } else {
+                    log.error("Only Scheduled or Approved appointments can be canceled.");
                     return;
                 }
-                doctorApproval.setDoctorComments("Appointment Canceled");
-                doctorApproval.setUpdatedAt(DefaultValuesPopulator.getCurrentTimestamp());
-                doctorApproval.setStatus(AppointmentStatus.CANCELED.name());
                 break;
 
             default:
@@ -70,5 +78,8 @@ public class AppointmentProgressServiceImplementation implements AppointmentProg
                 doctorApproval.setStatus(AppointmentStatus.PENDING.name());
                 break;
         }
+
+        doctorApproval.setUpdatedAt(DefaultValuesPopulator.getCurrentTimestamp());
+        this.doctorApprovalRepository.save(doctorApproval);
     }
 }

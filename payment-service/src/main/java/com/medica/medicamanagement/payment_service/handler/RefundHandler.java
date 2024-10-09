@@ -69,7 +69,7 @@ public class RefundHandler {
         paymentRepository.save(payment);
 
         kafkaTemplate.send("appointment-refund-status",
-                "{" + "\"appointmentId\": \"" + payment.getAppointmentId() + "\"," + "\"refundStatus\": \"" + refund.getStatus().name() + "\"}"
+                "{" + "\"appointmentId\": \"" + payment.getAppointmentId() + "\"," + "\"refundStatus\": \"" + payment.getStatus().name() + "\"}"
         );
     }
 
