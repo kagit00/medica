@@ -24,7 +24,7 @@ public class DoctorServiceClientImplementation implements DoctorServiceClient {
         }
 
         return webClient.get()
-                .uri(doctorsServerDomain + "/api/doctors/{id}", id)
+                .uri(doctorsServerDomain + "/api/doctors/doctor/{id}", id)
                 .retrieve()
                 .bodyToMono(DoctorResponse.class)
                 .block();

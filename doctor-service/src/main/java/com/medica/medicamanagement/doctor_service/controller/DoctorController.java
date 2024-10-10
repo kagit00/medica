@@ -26,7 +26,7 @@ public class DoctorController {
         return new ResponseEntity<>(responses, HttpStatus.OK);
     }
 
-    @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/doctor/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<DoctorResponse> getDoctorById(@PathVariable String id) {
         DoctorResponse response = doctorService.getDoctorById(UUID.fromString(id));
         return new ResponseEntity<>(response, HttpStatus.OK);
@@ -39,7 +39,7 @@ public class DoctorController {
     }
 
     @PostMapping(value = "/doctor/{id}", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<DoctorResponse> createDoctor(@PathVariable String id, @RequestBody @Valid DoctorRequest doctor) {
+    public ResponseEntity<DoctorResponse> updateDoctor(@PathVariable String id, @RequestBody @Valid DoctorRequest doctor) {
         DoctorResponse response = doctorService.updateDoctor(UUID.fromString(id), doctor);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
