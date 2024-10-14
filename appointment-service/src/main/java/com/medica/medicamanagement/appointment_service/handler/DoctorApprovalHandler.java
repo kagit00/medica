@@ -17,6 +17,9 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.UriComponentsBuilder;
 
+/**
+ * The type Doctor approval handler.
+ */
 @Service
 @RequiredArgsConstructor
 public class DoctorApprovalHandler {
@@ -26,6 +29,13 @@ public class DoctorApprovalHandler {
     private final PatientServiceClient patientService;
 
 
+    /**
+     * Update appointment status and notify.
+     *
+     * @param doctorResponse   the doctor response
+     * @param appointment      the appointment
+     * @param approvalResponse the approval response
+     */
     public void updateAppointmentStatusAndNotify(DoctorResponse doctorResponse, Appointment appointment, DoctorApprovalResponse approvalResponse) {
         PatientResponse patientResponse = this.patientService.getPatientById(appointment.getPatientId().toString());
 

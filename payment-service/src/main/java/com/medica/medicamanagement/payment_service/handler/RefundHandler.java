@@ -21,6 +21,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+/**
+ * The type Refund handler.
+ */
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -31,6 +34,11 @@ public class RefundHandler {
     private final TransactionRepository transactionRepository;
     private final RefundRepository refundRepository;
 
+    /**
+     * Refund payment.
+     *
+     * @param payment the payment
+     */
     public void refundPayment(Payment payment) {
         CustomTransaction customTransaction = this.transactionRepository.findByPayment(payment);
         Transaction transaction = gateway.transaction().find(customTransaction.getTransactionId());
@@ -73,6 +81,9 @@ public class RefundHandler {
         );
     }
 
+    /**
+     * Process pending refunds.
+     */
     @Scheduled(cron = "0 0 0 * * ?")
     @Transactional
     public void processPendingRefunds() {

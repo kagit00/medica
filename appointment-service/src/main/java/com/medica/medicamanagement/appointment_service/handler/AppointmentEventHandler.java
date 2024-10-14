@@ -16,6 +16,9 @@ import org.springframework.stereotype.Service;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * The type Appointment event handler.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -24,6 +27,11 @@ public class AppointmentEventHandler {
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final AppointmentProcessingService appointmentProcessingService;
 
+    /**
+     * Handle appointment request.
+     *
+     * @param message the message
+     */
     @KafkaListener(topics = "appointment_request_by_patient", groupId = "appointment-service-group")
     public void handleAppointmentRequest(String message) {
         try {
@@ -35,6 +43,11 @@ public class AppointmentEventHandler {
         }
     }
 
+    /**
+     * Handle doctor response.
+     *
+     * @param response the response
+     */
     @KafkaListener(topics = "appointment_response_by_doctor", groupId = "appointment-service-group")
     public void handleDoctorResponse(String response) {
         try {
@@ -47,6 +60,11 @@ public class AppointmentEventHandler {
         }
     }
 
+    /**
+     * Handle payment status.
+     *
+     * @param message the message
+     */
     @KafkaListener(topics = "appointment-payment-status", groupId = "appointment-service-group")
     public void handlePaymentStatus(String message) {
         try {
@@ -58,6 +76,11 @@ public class AppointmentEventHandler {
         }
     }
 
+    /**
+     * Handle refund status.
+     *
+     * @param response the response
+     */
     @KafkaListener(topics = "appointment-refund-status", groupId = "appointment-service-group")
     public void handleRefundStatus(String response) {
         try {
@@ -69,16 +92,31 @@ public class AppointmentEventHandler {
         }
     }
 
+    /**
+     * Handle appointment cancellation on patient req.
+     *
+     * @param appointmentId the appointment id
+     */
     @KafkaListener(topics = "appointment-cancelled-by-patient", groupId = "appointment-service-group")
     public void handleAppointmentCancellationOnPatientReq(String appointmentId) {
         appointmentProcessingService.cancelAppointment(appointmentId, true);
     }
 
+    /**
+     * Handle appointment cancellation on doctor req.
+     *
+     * @param appointmentId the appointment id
+     */
     @KafkaListener(topics = "appointment-cancelled-by-doctor", groupId = "appointment-service-group")
     public void handleAppointmentCancellationOnDoctorReq(String appointmentId) {
         appointmentProcessingService.cancelAppointment(appointmentId, false);
     }
 
+    /**
+     * Reschedule appointment at patient req.
+     *
+     * @param response the response
+     */
     @KafkaListener(topics = "appointment-rescheduled-by-patient", groupId = "appointment-service-group")
     public void rescheduleAppointmentAtPatientReq(String response) {
         List<String> combinedValues = Arrays.asList(response.split(" <> "));

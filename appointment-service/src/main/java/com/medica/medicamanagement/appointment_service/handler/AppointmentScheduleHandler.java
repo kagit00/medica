@@ -17,6 +17,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
+/**
+ * The type Appointment schedule handler.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -26,6 +29,11 @@ public class AppointmentScheduleHandler {
     private final DoctorServiceClient doctorService;
     private final PatientServiceClient patientService;
 
+    /**
+     * Process appointment and notify.
+     *
+     * @param request the request
+     */
     public void processAppointmentAndNotify(AppointmentRequest request) {
         DoctorResponse doctorResponse = doctorService.getDoctorById(request.getDoctorId().toString());
         PatientResponse patientResponse = patientService.getPatientById(request.getPatientId().toString());

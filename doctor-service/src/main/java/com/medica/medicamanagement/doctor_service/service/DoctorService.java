@@ -3,13 +3,15 @@ package com.medica.medicamanagement.doctor_service.service;
 import com.medica.dto.DoctorApprovalResponse;
 import com.medica.dto.DoctorResponse;
 import com.medica.medicamanagement.doctor_service.dto.DoctorRequest;
+import reactor.core.publisher.Mono;
 
 import java.util.List;
 import java.util.UUID;
 
 public interface DoctorService {
-    List<DoctorResponse> getAllDoctors();
-    DoctorResponse getDoctorById(UUID id);
-    DoctorResponse createDoctor(DoctorRequest doctorRequest);
-    DoctorResponse updateDoctor(UUID id, DoctorRequest request);
+    Mono<List<DoctorResponse>> getAllDoctors();
+    Mono<DoctorResponse> getDoctorById(UUID id);
+    Mono<DoctorResponse> createDoctor(DoctorRequest doctorRequest);
+    Mono<DoctorResponse> updateDoctor(UUID id, DoctorRequest request);
+    Mono<Void> deleteDoctor(UUID doctorId);
 }

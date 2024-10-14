@@ -19,6 +19,9 @@ import org.springframework.stereotype.Service;
 import java.util.Objects;
 import java.util.UUID;
 
+/**
+ * The type Appointment cancellation handler.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -28,6 +31,12 @@ public class AppointmentCancellationHandler {
     private final DoctorServiceClient doctorService;
     private final PatientServiceClient patientService;
 
+    /**
+     * Cancel appointment.
+     *
+     * @param appointmentId       the appointment id
+     * @param isCanceledByPatient the is canceled by patient
+     */
     public void cancelAppointment(String appointmentId, boolean isCanceledByPatient) {
         Appointment appointment = appointmentRepository.findById(UUID.fromString(appointmentId)).orElse(null);
 
@@ -71,6 +80,12 @@ public class AppointmentCancellationHandler {
         );
     }
 
+    /**
+     * Notify refund status to patient.
+     *
+     * @param appointmentId the appointment id
+     * @param status        the status
+     */
     public void notifyRefundStatusToPatient(String appointmentId, String status) {
         if (PaymentStatus.REFUNDED.name().equals(status)) {
             //kafkaTemplate.send("appointment-status-mail-for-patient", "");

@@ -16,6 +16,9 @@ import org.springframework.stereotype.Service;
 import java.util.Objects;
 import java.util.UUID;
 
+/**
+ * The type Appointment progress service.
+ */
 @Service
 @AllArgsConstructor
 @Slf4j

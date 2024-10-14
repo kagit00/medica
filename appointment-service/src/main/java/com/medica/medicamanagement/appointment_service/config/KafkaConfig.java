@@ -13,15 +13,28 @@ import org.apache.kafka.common.serialization.StringSerializer;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * The type Kafka config.
+ */
 @Configuration
 @EnableKafka
 public class KafkaConfig {
 
+    /**
+     * Kafka template kafka template.
+     *
+     * @return the kafka template
+     */
     @Bean
     public KafkaTemplate<String, String> kafkaTemplate() {
         return new KafkaTemplate<>(producerFactory());
     }
 
+    /**
+     * Producer factory.
+     *
+     * @return the producer factory
+     */
     @Bean
     public ProducerFactory<String, String> producerFactory() {
         Map<String, Object> configProps = new HashMap<>();
@@ -31,6 +44,11 @@ public class KafkaConfig {
         return new DefaultKafkaProducerFactory<>(configProps);
     }
 
+    /**
+     * Kafka listener container factory concurrent kafka listener container factory.
+     *
+     * @return the concurrent kafka listener container factory
+     */
     @Bean
     public ConcurrentKafkaListenerContainerFactory<String, String> kafkaListenerContainerFactory() {
         ConcurrentKafkaListenerContainerFactory<String, String> factory = new ConcurrentKafkaListenerContainerFactory<>();
@@ -38,6 +56,11 @@ public class KafkaConfig {
         return factory;
     }
 
+    /**
+     * Consumer factory.
+     *
+     * @return the consumer factory
+     */
     @Bean
     public ConsumerFactory<String, String> consumerFactory() {
         Map<String, Object> configProps = new HashMap<>();

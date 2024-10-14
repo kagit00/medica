@@ -1,10 +1,7 @@
 package com.medica.medicamanagement.doctor_service.dto;
 
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -18,13 +15,30 @@ import java.util.List;
 @Builder
 @Data
 public class DoctorRequest {
-    @Pattern(regexp = "^[A-Za-z ]{2,100}$", message = "Name must contain only letters and spaces, and be between 2 and 100 characters")
-    private String name;
+    @Size(min = 4, max = 15, message = "Username must be between 4 and 15 characters")
+    @Pattern(regexp = "^[a-zA-Z0-9]*$", message = "Username can only contain alphanumeric characters")
+    private String username;
+
+    @NotBlank(message = "First name cannot be blank")
+    @Pattern(regexp = "^[A-Za-zÀ-ÖØ-öø-ÿ'’\\- ]+$", message = "Invalid First Name")
+    private String firstName;
+
+    @NotBlank(message = "Last name cannot be blank")
+    @Pattern(regexp = "^[A-Za-zÀ-ÖØ-öø-ÿ'’\\- ]+$", message = "Invalid Last Name")
+    private String lastName;
+
+    @NotBlank(message = "Phone number cannot be blank")
+    @Pattern(regexp = "^\\+?[0-9. ()-]{10,13}$", message = "Invalid phone number")
+    private String phone;
+
+    private int age;
+
+    @NotBlank(message = "Address cannot be blank")
+    private String address;
+
     private String fee;
     @Valid
     private SpecializationRequest specializationRequest;
-    @Pattern(regexp = "\\d{10}", message = "Phone number should be 10 digits")
-    private String phone;
     @Email(message = "Invalid email format")
     private String email;
     @NotNull(message = "Availabilities cannot be null.")

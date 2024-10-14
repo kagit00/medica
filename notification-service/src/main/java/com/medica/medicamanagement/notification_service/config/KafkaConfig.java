@@ -12,15 +12,28 @@ import org.springframework.kafka.core.ProducerFactory;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * The type Kafka config.
+ */
 @Configuration
 @EnableKafka
 public class KafkaConfig {
 
+    /**
+     * Kafka template kafka template.
+     *
+     * @return the kafka template
+     */
     @Bean
     public KafkaTemplate<String, String> kafkaTemplate() {
         return new KafkaTemplate<>(producerFactory());
     }
 
+    /**
+     * Producer factory producer factory.
+     *
+     * @return the producer factory
+     */
     @Bean
     public ProducerFactory<String, String> producerFactory() {
         Map<String, Object> configProps = new HashMap<>();

@@ -14,6 +14,10 @@ import java.util.Date;
 @NoArgsConstructor
 public class PatientRequest {
 
+    @Size(min = 4, max = 15, message = "Username must be between 4 and 15 characters")
+    @Pattern(regexp = "^[a-zA-Z0-9]*$", message = "Username can only contain alphanumeric characters")
+    private String username;
+
     @NotBlank(message = "First name cannot be blank")
     @Pattern(regexp = "^[A-Za-zÀ-ÖØ-öø-ÿ'’\\- ]+$", message = "Invalid First Name")
     private String firstName;
@@ -30,9 +34,7 @@ public class PatientRequest {
     @Pattern(regexp = "^\\+?[0-9. ()-]{10,13}$", message = "Invalid phone number")
     private String phone;
 
-    @NotNull(message = "Date of birth cannot be null")
-    @Past(message = "Date of birth must be a past date")
-    private Date dob;
+    private int age;
 
     @NotBlank(message = "Address cannot be blank")
     private String address;

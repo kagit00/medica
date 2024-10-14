@@ -1,5 +1,6 @@
 package com.medica.medicamanagement.gateway_service.config;
 
+import com.medica.medicamanagement.gateway_service.util.Constant;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,21 +20,44 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * The type Gateway security config.
+ */
 @Configuration
 @EnableWebFluxSecurity
 public class GatewaySecurityConfig {
 
+    /**
+     * Security filter chain security web filter chain.
+     *
+     * @param http the http
+     * @return the security web filter chain
+     */
     @Bean
     public SecurityWebFilterChain securityFilterChain(ServerHttpSecurity http) {
         http.csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .authorizeExchange(authorize -> authorize
-                        .pathMatchers("/api/auth/**").permitAll() // Public auth endpoints
-                        .pathMatchers("/api/patients/**").hasRole("PATIENT") // Patient access
-                        .pathMatchers(HttpMethod.GET, "/api/patients/patient/**").hasAnyRole("PATIENT", "APPOINTMENT_MANAGER")
-                        .pathMatchers("/api/doctors/**").hasRole("DOCTOR")
-                        .pathMatchers(HttpMethod.GET, "/api/doctors/doctor/**").hasAnyRole("DOCTOR", "APPOINTMENT_MANAGER")
-                        .pathMatchers("/api/appointments/**").hasRole("APPOINTMENT_MANAGER")
-                        .anyExchange().authenticated()
+                                .pathMatchers(HttpMethod.POST, "/api/users/", "/api/patients/", "/api/doctors/")
+                                .permitAll()
+
+                                .pathMatchers("/api/users/user/**")
+                                .hasAnyRole(Constant.DOCTOR, Constant.PATIENT, Constant.APPOINTMENT_MANAGER)
+
+                                .pathMatchers("/api/patients/patient/**", "/api/patients/appointments/**")
+                                .hasRole(Constant.PATIENT)
+                                .pathMatchers(HttpMethod.GET, "/api/patients/patient/**")
+                                .hasAnyRole(Constant.APPOINTMENT_MANAGER, Constant.PATIENT)
+
+                                .pathMatchers("/api/doctors/doctor/**", "/api/doctors/appointments/**")
+                                .hasRole(Constant.DOCTOR)
+                                .pathMatchers(HttpMethod.GET, "/api/doctors/doctor/**")
+                                .hasAnyRole(Constant.APPOINTMENT_MANAGER, Constant.DOCTOR)
+
+                                .pathMatchers("/payment")
+                                .hasRole(Constant.PATIENT)
+
+                                .pathMatchers("/api/appointments/**").hasRole("APPOINTMENT_MANAGER")
+                                .anyExchange().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> {
                     jwt.jwtAuthenticationConverter(jwtAuthenticationConverter());
@@ -52,6 +76,11 @@ public class GatewaySecurityConfig {
         return http.build();
     }
 
+    /**
+     * Jwt authentication converter converter.
+     *
+     * @return the converter
+     */
     @Bean
     public Converter<Jwt, Mono<AbstractAuthenticationToken>> jwtAuthenticationConverter() {
         JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
@@ -64,14 +93,17 @@ public class GatewaySecurityConfig {
         };
     }
 
+    /**
+     * The type Keycloak role converter.
+     */
     public static class KeycloakRoleConverter implements Converter<Jwt, Collection<GrantedAuthority>> {
         @Override
         public Collection<GrantedAuthority> convert(Jwt jwt) {
-            Map<String, Object> resourceAccess = (Map<String, Object>) jwt.getClaims().get("resource_access");
-
+            // First, check resource_access for roles
+            Map<String, Object> resourceAccess = safeCastToMap(jwt.getClaims().get("resource_access"));
             if (resourceAccess != null && resourceAccess.containsKey("medica")) {
-                Map<String, Object> clientAccess = (Map<String, Object>) resourceAccess.get("medica");
-                Collection<String> roles = (Collection<String>) clientAccess.get("roles");
+                Map<String, Object> clientAccess = safeCastToMap(resourceAccess.get("medica"));
+                Collection<String> roles = safeCastToCollection(clientAccess.get("roles"));
 
                 if (roles != null) {
                     return roles.stream()
@@ -79,7 +111,46 @@ public class GatewaySecurityConfig {
                             .collect(Collectors.toList());
                 }
             }
+
+            // If no roles in resource_access, fall back to realm_access
+            Map<String, Object> realmAccess = safeCastToMap(jwt.getClaims().get("realm_access"));
+            if (realmAccess != null && realmAccess.containsKey("roles")) {
+                Collection<String> roles = safeCastToCollection(realmAccess.get("roles"));
+                return roles.stream()
+                        .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
+                        .collect(Collectors.toList());
+            }
+
             return Collections.emptyList();
         }
     }
+
+    /**
+     * Safe cast to map map.
+     *
+     * @param obj the obj
+     * @return the map
+     */
+    @SuppressWarnings("unchecked")
+    public static Map<String, Object> safeCastToMap(Object obj) {
+        if (obj instanceof Map<?, ?>) {
+            return (Map<String, Object>) obj;
+        }
+        return null;
+    }
+
+    /**
+     * Safe cast to collection collection.
+     *
+     * @param obj the obj
+     * @return the collection
+     */
+    @SuppressWarnings("unchecked")
+    public static Collection<String> safeCastToCollection(Object obj) {
+        if (obj instanceof Collection<?>) {
+            return (Collection<String>) obj;
+        }
+        return null;
+    }
+
 }

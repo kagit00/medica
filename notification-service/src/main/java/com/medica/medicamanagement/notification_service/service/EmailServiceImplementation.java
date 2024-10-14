@@ -18,6 +18,9 @@ import org.thymeleaf.spring6.SpringTemplateEngine;
 import java.util.*;
 
 
+/**
+ * The type Email service implementation.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -77,7 +80,7 @@ public class EmailServiceImplementation implements EmailService {
             canceledTemplate = isAppointmentCancelledByPatient? canceledByPatientTemplate : canceledByDoctorTemplate;
 
             String htmlBody = getHtmlBody(appointmentResponse.getStatus(), scheduledTemplate, rescheduledTemplate, approvedTemplate, rejectedTemplate, canceledTemplate, context);
-            helper.setTo(isPatient? patientResponse.getEmailId() : doctorResponse.getEmail());
+            helper.setTo(isPatient? patientResponse.getEmail() : doctorResponse.getEmail());
 
             helper.setSubject(subject);
             helper.setText(htmlBody, true);
@@ -92,11 +95,11 @@ public class EmailServiceImplementation implements EmailService {
         Map<String, Object> templateModel = new HashMap<>();
         if (isPatient) {
             templateModel.put("name", patientResponse.getFirstName());
-            templateModel.put("doctorName", doctorResponse.getName());
+            templateModel.put("doctorName", doctorResponse.getFirstName() + " " + doctorResponse.getLastName());
             templateModel.put("specialization", doctorResponse.getSpecialization().getName());
             templateModel.put("paymentLink", paymentLink); // Ensure paymentLink is added for patients
         } else {
-            templateModel.put("name", doctorResponse.getName());
+            templateModel.put("name", doctorResponse.getFirstName() + " " + doctorResponse.getLastName());
             templateModel.put("patientName", patientResponse.getFirstName() + " " + patientResponse.getLastName());
         }
 

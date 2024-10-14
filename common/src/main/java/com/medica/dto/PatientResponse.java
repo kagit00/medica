@@ -15,11 +15,12 @@ import java.util.UUID;
 @NoArgsConstructor
 public class PatientResponse {
     private UUID id;
+    private String username;
     private String firstName;
     private String lastName;
-    private String emailId;
+    private String email;
     private String phone;
-    private Date dob;
+    private int age;
     private String address;
     private String medicalHistory;
 }

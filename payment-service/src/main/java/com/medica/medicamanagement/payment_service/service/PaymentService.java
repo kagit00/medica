@@ -16,6 +16,9 @@ import org.springframework.ui.Model;
 import java.math.BigDecimal;
 import java.util.UUID;
 
+/**
+ * The type Payment service.
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -39,6 +42,14 @@ public class PaymentService {
                 .build();
     }
 
+    /**
+     * Gets client token.
+     *
+     * @param appointmentId the appointment id
+     * @param amount        the amount
+     * @param model         the model
+     * @return the client token
+     */
     public String getClientToken(String appointmentId, String amount, Model model) {
         String clientToken = gateway.clientToken().generate();
 
@@ -49,6 +60,16 @@ public class PaymentService {
         return "payment-interface";
     }
 
+    /**
+     * Process payment string.
+     *
+     * @param nonce         the nonce
+     * @param amount        the amount
+     * @param paymentMethod the payment method
+     * @param appointmentId the appointment id
+     * @param model         the model
+     * @return the string
+     */
     public String processPayment(String nonce, BigDecimal amount, String paymentMethod, String appointmentId, Model model) {
         TransactionRequest request = new TransactionRequest().amount(amount)
                 .paymentMethodNonce(nonce).options().submitForSettlement(true).done();
@@ -73,6 +94,4 @@ public class PaymentService {
 
         return "result";
     }
-
-
 }

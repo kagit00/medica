@@ -12,6 +12,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+/**
+ * The type Appointment status update retry handler.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -19,6 +22,9 @@ public class AppointmentStatusUpdateRetryHandler {
     private final AppointmentRepository appointmentRepository;
     private final KafkaTemplate<String, String> kafkaTemplate;
 
+    /**
+     * Check pending appointments.
+     */
     @Scheduled(cron = "0 0 0 * * ?")
     @Transactional
     public void checkPendingAppointments() {

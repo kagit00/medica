@@ -13,6 +13,9 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.util.UUID;
 
+/**
+ * The type Custom transaction.
+ */
 @Entity
 @Table(name = "transactions")
 @Builder

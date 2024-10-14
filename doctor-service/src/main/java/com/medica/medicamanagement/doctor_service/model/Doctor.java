@@ -20,17 +20,11 @@ public class Doctor {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
     @Column(nullable = false)
-    private String name;
-    @Column(nullable = false)
     private String fee;
+    private UUID userId;
     @ManyToOne
     @JoinColumn(name = "specialization_id", nullable = false)
     private Specialization specialization;
-    @Column(nullable = false)
-    private String phone;
-    @Column(nullable = false)
-    private String email;
-    @Column(nullable = false)
     private String createdAt;
     @Column(nullable = false)
     private String updatedAt;

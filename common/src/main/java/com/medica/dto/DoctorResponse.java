@@ -14,10 +14,14 @@ import java.util.UUID;
 @Data
 public class DoctorResponse {
     private UUID id;
-    private String name;
+    private String username;
+    private String firstName;
+    private String lastName;
     private String fee;
+    private int age;
     private SpecializationResponse specialization;
     private String phone;
     private String email;
+    private String address;
     private List<DoctorAvailabilityResponse> availabilities;
 }

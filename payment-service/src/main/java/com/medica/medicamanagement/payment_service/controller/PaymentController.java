@@ -8,17 +8,38 @@ import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 
+/**
+ * The type Payment controller.
+ */
 @Controller
 @RequestMapping("/payment")
 @RequiredArgsConstructor
 public class PaymentController {
     private final PaymentService paymentService;
 
+    /**
+     * Gets payment page.
+     *
+     * @param amount        the amount
+     * @param appointmentId the appointment id
+     * @param model         the model
+     * @return the payment page
+     */
     @GetMapping(value = "/payment-interface")
     public String getPaymentPage(@RequestParam("amount") String amount, String appointmentId, Model model) {
         return this.paymentService.getClientToken(appointmentId, amount, model);
     }
 
+    /**
+     * Process payment string.
+     *
+     * @param nonce         the nonce
+     * @param amount        the amount
+     * @param appointmentId the appointment id
+     * @param paymentMethod the payment method
+     * @param model         the model
+     * @return the string
+     */
     @PostMapping("/process")
     public String processPayment(@RequestParam String nonce,
                                  @RequestParam BigDecimal amount,

@@ -9,6 +9,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
+/**
+ * The type Appointment event handler.
+ */
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -17,6 +20,11 @@ public class AppointmentEventHandler {
     private final ObjectMapper om;
     private final PaymentRepository paymentRepository;
 
+    /**
+     * Handle appointment retry.
+     *
+     * @param response the response
+     */
     @KafkaListener(topics = "process-refund-to-patient", groupId = "doctor-service-group")
     public void handleAppointmentRetry(String response) {
         try {

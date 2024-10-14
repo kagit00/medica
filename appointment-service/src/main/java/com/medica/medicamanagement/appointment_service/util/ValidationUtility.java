@@ -14,12 +14,24 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * The type Validation utility.
+ */
 @Slf4j
 public final class ValidationUtility {
     private ValidationUtility() {
         throw new UnsupportedOperationException("Unsupported Operation");
     }
 
+    /**
+     * Is valid boolean.
+     *
+     * @param request               the request
+     * @param doctorResponse        the doctor response
+     * @param patientResponse       the patient response
+     * @param appointmentRepository the appointment repository
+     * @return the boolean
+     */
     public static boolean isValid(AppointmentRequest request, DoctorResponse doctorResponse, PatientResponse patientResponse, AppointmentRepository appointmentRepository) {
         if (Objects.isNull(doctorResponse) || Objects.isNull(patientResponse)) {
             log.error(Constant.DOCTOR_NOT_FOUND + " Patient is null");
@@ -27,7 +39,7 @@ public final class ValidationUtility {
         }
 
         if (!isAppointmentInAvailabilityRange(doctorResponse.getAvailabilities(), request.getAppointmentDate(), request.getTimeRange())) {
-            log.error("Dr. {} is not available within this time range", doctorResponse.getName());
+            log.error("Dr. {} is not available within this time range", doctorResponse.getFirstName() + " " + doctorResponse.getLastName());
             return false;
         }
 
@@ -43,12 +55,20 @@ public final class ValidationUtility {
                 request.getAppointmentDate(), request.getTimeRange().getStartTime(), request.getTimeRange().getEndTime());
 
         if (isTimeSlotAlreadyTakenByDoctor) {
-            log.error(Constant.getErrorMessageForInvalidTimeRange(doctorResponse.getName()));
+            log.error(Constant.getErrorMessageForInvalidTimeRange(doctorResponse.getFirstName() + " " + doctorResponse.getLastName()));
             return false;
         }
         return true;
     }
 
+    /**
+     * Is appointment in availability range boolean.
+     *
+     * @param availabilityList     the availability list
+     * @param appointmentReqDate   the appointment req date
+     * @param appointmentTimeRange the appointment time range
+     * @return the boolean
+     */
     public static boolean isAppointmentInAvailabilityRange(List<DoctorAvailabilityResponse> availabilityList, Date appointmentReqDate, TimeRange appointmentTimeRange) {
         LocalDate appointmentDate = appointmentReqDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
 

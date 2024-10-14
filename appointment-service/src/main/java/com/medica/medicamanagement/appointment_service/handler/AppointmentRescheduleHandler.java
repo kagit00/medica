@@ -18,6 +18,9 @@ import org.springframework.stereotype.Service;
 import java.util.Objects;
 import java.util.UUID;
 
+/**
+ * The type Appointment reschedule handler.
+ */
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -27,6 +30,12 @@ public class AppointmentRescheduleHandler {
     private final PatientServiceClient patientService;
     private final KafkaTemplate<String, String> kafkaTemplate;
 
+    /**
+     * Reschedule appointment.
+     *
+     * @param appointmentId                the appointment id
+     * @param appointmentRescheduleRequest the appointment reschedule request
+     */
     public void rescheduleAppointment(String appointmentId, AppointmentRescheduleRequest appointmentRescheduleRequest) {
         Appointment appointment = this.appointmentRepository.findById(UUID.fromString(appointmentId)).orElse(null);
 

@@ -1,9 +1,6 @@
 package com.medica.medicamanagement.doctor_service.utils;
 
-import com.medica.dto.DoctorApprovalResponse;
-import com.medica.dto.DoctorAvailabilityResponse;
-import com.medica.dto.DoctorResponse;
-import com.medica.dto.SpecializationResponse;
+import com.medica.dto.*;
 import com.medica.medicamanagement.doctor_service.model.Doctor;
 import com.medica.medicamanagement.doctor_service.model.DoctorApproval;
 
@@ -15,7 +12,7 @@ public final class ResponseMakerUtility {
         throw new UnsupportedOperationException("Unsupported Operation");
     }
 
-    public static DoctorResponse getDoctorResponse(Doctor doctor) {
+    public static DoctorResponse getDoctorResponse(Doctor doctor, UserResponse userResponse) {
         SpecializationResponse specializationResponse = SpecializationResponse.builder().name(doctor.getSpecialization().getName())
                 .description(doctor.getSpecialization().getDescription()).id(doctor.getSpecialization().getId())
                 .build();
@@ -29,7 +26,8 @@ public final class ResponseMakerUtility {
 
         return DoctorResponse.builder()
                 .id(doctor.getId()).fee(doctor.getFee())
-                .email(doctor.getEmail()).phone(doctor.getPhone()).name(doctor.getName())
+                .email(userResponse.getEmail()).phone(userResponse.getPhone()).firstName(userResponse.getFirstName())
+                .lastName(userResponse.getLastName()).age(userResponse.getAge()).address(userResponse.getAddress())
                 .specialization(specializationResponse).availabilities(doctorAvailabilityResponses)
                 .build();
     }

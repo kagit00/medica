@@ -15,6 +15,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
+/**
+ * The type Payment status handler.
+ */
 @Service
 @RequiredArgsConstructor
 public class PaymentStatusHandler {
@@ -23,6 +26,13 @@ public class PaymentStatusHandler {
     private final AppointmentRepository appointmentRepository;
     private final KafkaTemplate<String, String> kafkaTemplate;
 
+    /**
+     * Notify patient and doctor.
+     *
+     * @param appointment     the appointment
+     * @param doctorResponse  the doctor response
+     * @param patientResponse the patient response
+     */
     public void notifyPatientAndDoctor(Appointment appointment, DoctorResponse doctorResponse, PatientResponse patientResponse) {
 
         AppointmentResponse appointmentResponse = ResponseMakerUtility.getAppointmentResponse(appointment);
@@ -37,6 +47,12 @@ public class PaymentStatusHandler {
         );
     }
 
+    /**
+     * Update appointment status.
+     *
+     * @param appointment the appointment
+     * @param status      the status
+     */
     public void updateAppointmentStatus(Appointment appointment, String status) {
         DoctorResponse doctorResponse = this.doctorService.getDoctorById(appointment.getDoctorId().toString());
         PatientResponse patientResponse = this.patientService.getPatientById(appointment.getPatientId().toString());
