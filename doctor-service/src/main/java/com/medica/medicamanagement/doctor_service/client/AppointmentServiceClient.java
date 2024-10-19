@@ -1,7 +1,10 @@
 package com.medica.medicamanagement.doctor_service.client;
 
+import com.medica.dto.AppointmentResponse;
 import com.medica.dto.DoctorApprovalResponse;
 import reactor.core.publisher.Mono;
+
+import java.util.List;
 
 /**
  * The interface Appointment service client.

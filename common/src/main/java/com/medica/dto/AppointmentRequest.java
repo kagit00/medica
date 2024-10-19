@@ -16,9 +16,9 @@ import java.util.UUID;
 @Setter
 public class AppointmentRequest {
     @NotNull(message = "Patient ID is required")
-    private UUID patientId;
+    private String patientId;
     @NotNull(message = "Doctor ID is required")
-    private UUID doctorId;
+    private String doctorId;
     @NotNull(message = "Appointment date is required")
     @Future(message = "Appointment date must be in the future")
     private Date appointmentDate;

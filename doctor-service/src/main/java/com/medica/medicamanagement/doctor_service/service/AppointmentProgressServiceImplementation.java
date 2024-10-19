@@ -1,17 +1,19 @@
 package com.medica.medicamanagement.doctor_service.service;
 
+import com.google.cloud.spring.pubsub.core.PubSubTemplate;
 import com.medica.dto.DoctorApprovalResponse;
+import com.medica.exception.BadRequestException;
+import com.medica.exception.InternalServerErrorException;
 import com.medica.medicamanagement.doctor_service.dao.DoctorApprovalRepository;
 import com.medica.medicamanagement.doctor_service.model.DoctorApproval;
-import com.medica.medicamanagement.doctor_service.utils.DefaultValuesPopulator;
 import com.medica.medicamanagement.doctor_service.utils.ResponseMakerUtility;
 import com.medica.model.AppointmentStatus;
 import com.medica.util.BasicUtility;
+import com.medica.util.DefaultValuesPopulator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
-
+import reactor.core.publisher.Mono;
 import java.util.UUID;
 
 @Service
@@ -19,21 +21,26 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class AppointmentProgressServiceImplementation implements AppointmentProgressService {
     private final DoctorApprovalRepository doctorApprovalRepository;
-    private final KafkaTemplate<String, String> kafkaTemplate;
+    private final PubSubTemplate pubSubTemplate;
     private final DoctorServiceImplementation doctorService;
 
     @Override
     public DoctorApprovalResponse updateAppointmentStatus(UUID appointmentId, String status) {
+
         DoctorApproval doctorApproval = this.doctorApprovalRepository.findByAppointmentId(appointmentId);
         updateAppointmentStatus(doctorApproval, status);
         DoctorApprovalResponse doctorApprovalResponse = ResponseMakerUtility.getDoctorApprovalResponse(doctorApproval);
 
         if (AppointmentStatus.CANCELED.name().equals(doctorApprovalResponse.getStatus())) {
-            kafkaTemplate.send("appointment-cancelled-by-doctor", doctorApprovalResponse.getAppointmentId().toString());
+            pubSubTemplate.publish("appointment-cancelled-by-doctor", doctorApprovalResponse.getAppointmentId().toString());
         } else {
-            kafkaTemplate.send("appointment_response_by_doctor", BasicUtility.stringifyObject(doctorApprovalResponse) + " <> " +
-                    BasicUtility.stringifyObject(doctorService.getDoctorById(doctorApproval.getDoctorId()))
-            );
+            this.doctorService.getDoctorById(doctorApproval.getDoctorId())
+                    .switchIfEmpty(Mono.error(new InternalServerErrorException("Doctor not found")))
+                    .subscribe(doctorResponse -> {
+                        String stringifiedDoctorResponse = BasicUtility.stringifyObject(doctorResponse);
+                        String stringifiedDoctorApprovalResponse = BasicUtility.stringifyObject(doctorApprovalResponse);
+                        pubSubTemplate.publish("appointment-response-by-doctor", stringifiedDoctorApprovalResponse + " <> " + stringifiedDoctorResponse);
+                    });
         }
         return doctorApprovalResponse;
     }
@@ -49,27 +56,28 @@ public class AppointmentProgressServiceImplementation implements AppointmentProg
                     doctorApproval.setDoctorComments("Appointment Approved");
                     doctorApproval.setStatus(AppointmentStatus.APPROVED.name());
                 } else {
-                    log.error("Unknown status request for approval .");
-                    return;
+                    throw new BadRequestException("Appointment is not in status for doctor approval");
                 }
                 break;
 
             case "REJECTED":
-                if (AppointmentStatus.RESCHEDULED.name().equals(currentStatus) || AppointmentStatus.SCHEDULED.name().equals(currentStatus) || AppointmentStatus.APPROVED.name().equals(currentStatus)) {
-                    log.error("Rescheduled or Scheduled or Approved appointments cannot be rejected.");
-                    return;
+                if (AppointmentStatus.RESCHEDULED.name().equals(currentStatus) || AppointmentStatus.SCHEDULED.name().equals(currentStatus) ||
+                        AppointmentStatus.APPROVED.name().equals(currentStatus) || AppointmentStatus.CANCELED.name().equals(currentStatus)) {
+
+                    throw new BadRequestException("Rescheduled or Scheduled or Approved or Cancelled appointments cannot be rejected. However You may cancel the appointment");
                 }
                 doctorApproval.setDoctorComments("Appointment Rejected");
                 doctorApproval.setStatus(AppointmentStatus.REJECTED.name());
                 break;
 
             case "CANCELED":
-                if (AppointmentStatus.SCHEDULED.name().equals(currentStatus) || AppointmentStatus.RESCHEDULED.name().equals(currentStatus)) {
+                if (AppointmentStatus.SCHEDULED.name().equals(currentStatus) || AppointmentStatus.RESCHEDULED.name().equals(currentStatus) || AppointmentStatus.APPROVED.name().equals(currentStatus)) {
+
                     doctorApproval.setDoctorComments("Appointment Canceled");
                     doctorApproval.setStatus(AppointmentStatus.CANCELED.name());
+
                 } else {
-                    log.error("Only Scheduled or Approved appointments can be canceled.");
-                    return;
+                    throw new BadRequestException("Only Scheduled or Rescheduled or Approved appointments can be canceled.");
                 }
                 break;
 

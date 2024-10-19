@@ -1,5 +1,6 @@
 package com.medica.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 
 import java.util.*;
@@ -16,6 +17,7 @@ public class UserResponse {
     private String username;
     private String email;
     private String phone;
+    private String password;
     private String address;
     private int age;
     private List<RoleReq> roles = new ArrayList<>();

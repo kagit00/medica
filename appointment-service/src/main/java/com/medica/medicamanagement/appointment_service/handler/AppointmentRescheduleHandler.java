@@ -1,6 +1,8 @@
 package com.medica.medicamanagement.appointment_service.handler;
 
+import com.google.cloud.spring.pubsub.core.PubSubTemplate;
 import com.medica.dto.*;
+import com.medica.exception.BadRequestException;
 import com.medica.medicamanagement.appointment_service.client.DoctorServiceClient;
 import com.medica.medicamanagement.appointment_service.client.PatientServiceClient;
 import com.medica.medicamanagement.appointment_service.dao.AppointmentRepository;
@@ -12,9 +14,7 @@ import com.medica.util.BasicUtility;
 import com.medica.util.DefaultValuesPopulator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
-
 import java.util.Objects;
 import java.util.UUID;
 
@@ -28,7 +28,7 @@ public class AppointmentRescheduleHandler {
     private final AppointmentRepository appointmentRepository;
     private final DoctorServiceClient doctorService;
     private final PatientServiceClient patientService;
-    private final KafkaTemplate<String, String> kafkaTemplate;
+    private final PubSubTemplate pubSubTemplate;
 
     /**
      * Reschedule appointment.
@@ -42,14 +42,15 @@ public class AppointmentRescheduleHandler {
         if (!Objects.isNull(appointment) && AppointmentStatus.SCHEDULED.name().equals(appointment.getStatus())) {
 
             AppointmentRequest appointmentRequest = AppointmentRequest.builder().status(appointment.getStatus())
-                    .appointmentDate(appointmentRescheduleRequest.getAppointmentDate()).doctorId(appointment.getDoctorId())
-                    .timeRange(appointmentRescheduleRequest.getTimeRange()).patientId(appointment.getPatientId())
+                    .appointmentDate(appointmentRescheduleRequest.getAppointmentDate()).doctorId(String.valueOf(appointment.getDoctorId()))
+                    .timeRange(appointmentRescheduleRequest.getTimeRange()).patientId(String.valueOf(appointment.getPatientId()))
                     .build();
+
             DoctorResponse doctorResponse = this.doctorService.getDoctorById(appointment.getDoctorId().toString());
             PatientResponse patientResponse = this.patientService.getPatientById(appointment.getPatientId().toString());
 
             if (!ValidationUtility.isValid(appointmentRequest, doctorResponse, patientResponse, appointmentRepository)) {
-                return;
+                throw new BadRequestException("Appointment Request not valid");
             }
 
             appointment.setAppointmentDescription("Appointment Reschedule Request Initiated");
@@ -63,10 +64,13 @@ public class AppointmentRescheduleHandler {
             this.appointmentRepository.save(appointment);
 
             AppointmentResponse appointmentResponse = ResponseMakerUtility.getAppointmentResponse(appointment);
-            kafkaTemplate.send("appointment-rescheduled-by-appointment-setters-at-patient-request", BasicUtility.stringifyObject(appointmentResponse));
+            pubSubTemplate.publish(
+                    "appointment-rescheduled-by-appointment-setters-at-patient-request",
+                    BasicUtility.stringifyObject(appointmentResponse)
+            );
 
         } else {
-            log.error("Appointment Id should be valid & appointment must be in scheduled state");
+            throw new BadRequestException("Appointment Id should be valid & appointment must be in scheduled state");
         }
     }
 }

@@ -4,13 +4,13 @@ import com.braintreegateway.BraintreeGateway;
 import com.braintreegateway.Result;
 import com.braintreegateway.Transaction;
 import com.braintreegateway.TransactionRequest;
+import com.google.cloud.spring.pubsub.core.PubSubTemplate;
 import com.medica.dto.PaymentStatus;
 import com.medica.medicamanagement.payment_service.dao.PaymentRepository;
 import com.medica.medicamanagement.payment_service.model.*;
 import com.medica.util.DefaultValuesPopulator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.ui.Model;
 import java.math.BigDecimal;
@@ -23,7 +23,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Slf4j
 public class PaymentService {
-    private final KafkaTemplate<String, String> kafkaTemplate;
+    private final PubSubTemplate pubSubTemplate;
     private final BraintreeGateway gateway;
     private final PaymentRepository paymentRepository;
 
@@ -88,8 +88,9 @@ public class PaymentService {
         payment.setCustomTransaction(customTransaction);
         paymentRepository.save(payment);
 
-        kafkaTemplate.send("appointment-payment-status",
-                "{" + "\"appointmentId\": \"" + appointmentId + "\"," + "\"status\": \"" + payment.getStatus().name() + "\"}"
+        pubSubTemplate.publish("appointment-payment-status",
+                "{" + "\"appointmentId\": \"" + appointmentId + "\","
+                        + "\"status\": \"" + payment.getStatus().name() + "\"}"
         );
 
         return "result";

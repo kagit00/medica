@@ -1,39 +1,36 @@
-package com.medica.medicamanagement.payment_service.handler;
+package com.medica.medicamanagement.payment_service.listener;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.medica.dto.AppointmentResponse;
+import com.medica.exception.InternalServerErrorException;
 import com.medica.medicamanagement.payment_service.dao.PaymentRepository;
+import com.medica.medicamanagement.payment_service.handler.RefundHandler;
 import com.medica.medicamanagement.payment_service.model.Payment;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
-/**
- * The type Appointment event handler.
- */
-@Service
 @Slf4j
+@Service
 @RequiredArgsConstructor
-public class AppointmentEventHandler {
-    private final RefundHandler refundHandler;
+public class RefundProcessListener {
+
     private final ObjectMapper om;
     private final PaymentRepository paymentRepository;
+    private final RefundHandler refundHandler;
 
     /**
-     * Handle appointment retry.
+     * Handle refund process for the appointment.
      *
-     * @param response the response
+     * @param response the response containing appointment details
      */
-    @KafkaListener(topics = "process-refund-to-patient", groupId = "doctor-service-group")
-    public void handleAppointmentRetry(String response) {
+    public void handleRefundProcess(String response) {
         try {
             AppointmentResponse appointmentResponse = om.readValue(response, AppointmentResponse.class);
             Payment payment = this.paymentRepository.findByAppointmentId(appointmentResponse.getId());
             this.refundHandler.refundPayment(payment);
-
         } catch (Exception e) {
-            log.error("Something went wrong: {}", e.getMessage());
+            throw new InternalServerErrorException("Something went wrong: " + e.getMessage());
         }
     }
 }

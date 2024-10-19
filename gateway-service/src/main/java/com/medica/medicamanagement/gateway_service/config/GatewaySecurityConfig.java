@@ -45,16 +45,24 @@ public class GatewaySecurityConfig {
 
                                 .pathMatchers("/api/patients/patient/**", "/api/patients/appointments/**")
                                 .hasRole(Constant.PATIENT)
+
                                 .pathMatchers(HttpMethod.GET, "/api/patients/patient/**")
                                 .hasAnyRole(Constant.APPOINTMENT_MANAGER, Constant.PATIENT)
 
                                 .pathMatchers("/api/doctors/doctor/**", "/api/doctors/appointments/**")
                                 .hasRole(Constant.DOCTOR)
+
                                 .pathMatchers(HttpMethod.GET, "/api/doctors/doctor/**")
                                 .hasAnyRole(Constant.APPOINTMENT_MANAGER, Constant.DOCTOR)
 
-                                .pathMatchers("/payment")
-                                .hasRole(Constant.PATIENT)
+                                .pathMatchers("/api/appointments/patient/**")
+                                .hasAnyRole(Constant.PATIENT, Constant.APPOINTMENT_MANAGER)
+
+                                .pathMatchers("/api/appointments/doctor/**")
+                                .hasAnyRole(Constant.DOCTOR, Constant.APPOINTMENT_MANAGER)
+
+                                .pathMatchers("/payment/**")
+                                .permitAll()
 
                                 .pathMatchers("/api/appointments/**").hasRole("APPOINTMENT_MANAGER")
                                 .anyExchange().authenticated()
@@ -126,7 +134,7 @@ public class GatewaySecurityConfig {
     }
 
     /**
-     * Safe cast to map map.
+     * Safe cast to map.
      *
      * @param obj the obj
      * @return the map

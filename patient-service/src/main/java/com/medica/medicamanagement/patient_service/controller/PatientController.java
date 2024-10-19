@@ -6,13 +6,13 @@ import com.medica.medicamanagement.patient_service.service.PatientService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -31,8 +31,10 @@ public class PatientController {
      * @return the response entity
      */
     @PostMapping(value = "/", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Mono<PatientResponse>> createPatient(@RequestBody @Valid  PatientRequest patient) {
-        return new ResponseEntity<>(this.patientService.createPatient(patient), HttpStatusCode.valueOf(201));
+    public Mono<ResponseEntity<Map<String, Object>>> createPatient(@RequestBody @Valid  PatientRequest patient) {
+        return this.patientService.createPatient(patient)
+                .map(response -> ResponseEntity.status(HttpStatus.CREATED).body(response))
+                .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build()));
     }
 
     /**
@@ -43,8 +45,10 @@ public class PatientController {
      * @return the response entity
      */
     @PutMapping(value = "/patient/{patientId}", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Mono<PatientResponse>> updatePatient(@RequestBody @Valid PatientRequest patientRequest, @PathVariable("patientId") String patientId) {
-        return new ResponseEntity<>(this.patientService.updatePatient(patientRequest, UUID.fromString(patientId)), HttpStatusCode.valueOf(200));
+    public Mono<ResponseEntity<PatientResponse>> updatePatient(@RequestBody @Valid PatientRequest patientRequest, @PathVariable("patientId") String patientId) {
+        return this.patientService.updatePatient(patientRequest, UUID.fromString(patientId))
+                .map(ResponseEntity::ok)
+                .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build()));
     }
 
     /**
@@ -53,8 +57,10 @@ public class PatientController {
      * @return the all patients
      */
     @GetMapping(value = "/", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Mono<List<PatientResponse>>> getAllPatients() {
-        return new ResponseEntity<>(this.patientService.getAllPatients(), HttpStatusCode.valueOf(200));
+    public Mono<ResponseEntity<List<PatientResponse>>> getAllPatients() {
+        return this.patientService.getAllPatients()
+                .map(ResponseEntity::ok)
+                .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build()));
     }
 
     /**
@@ -64,8 +70,10 @@ public class PatientController {
      * @return the patient by id
      */
     @GetMapping(value = "/patient/{patientId}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Mono<PatientResponse>> getPatientById(@PathVariable("patientId") String patientId) {
-        return new ResponseEntity<>(this.patientService.getPatientById(UUID.fromString(patientId)), HttpStatusCode.valueOf(200));
+    public Mono<ResponseEntity<PatientResponse>> getPatientById(@PathVariable("patientId") String patientId) {
+        return this.patientService.getPatientById(UUID.fromString(patientId))
+                .map(ResponseEntity::ok)
+                .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build()));  // Handle errors
     }
 
     /**

@@ -28,9 +28,14 @@ public class GlobalExceptionHandler {
      * @param e The parameter "e" is an instance of the BadRequestException class, which is an exception that is thrown when a bad request is made.
      * @return A ResponseEntity object is being returned.
      */
-    @ExceptionHandler({BadRequestException.class, NoSuchElementException.class})
+    @ExceptionHandler(BadRequestException.class)
     public ResponseEntity<Error> handleBadRequestException(BadRequestException e) {
         return new ResponseEntity<>(ErrorUtility.getError(e.getMessage(), HttpStatus.BAD_REQUEST), HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(NoSuchElementException.class)
+    public ResponseEntity<Error> handleNoSuchElementException(NoSuchElementException e) {
+        return new ResponseEntity<>(ErrorUtility.getError(e.getMessage(), HttpStatus.NOT_FOUND), HttpStatus.NOT_FOUND);
     }
 
     /**

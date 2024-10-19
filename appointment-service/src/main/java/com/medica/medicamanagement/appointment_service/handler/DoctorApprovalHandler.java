@@ -1,5 +1,6 @@
 package com.medica.medicamanagement.appointment_service.handler;
 
+import com.google.cloud.spring.pubsub.core.PubSubTemplate;
 import com.medica.dto.AppointmentResponse;
 import com.medica.dto.DoctorApprovalResponse;
 import com.medica.dto.DoctorResponse;
@@ -13,7 +14,6 @@ import com.medica.util.BasicUtility;
 import com.medica.util.DefaultValuesPopulator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.env.Environment;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -23,7 +23,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 @Service
 @RequiredArgsConstructor
 public class DoctorApprovalHandler {
-    private final KafkaTemplate<String, String> kafkaTemplate;
+    private final PubSubTemplate pubSubTemplate;
     private final Environment env;
     private final AppointmentRepository appointmentRepository;
     private final PatientServiceClient patientService;
@@ -44,6 +44,7 @@ public class DoctorApprovalHandler {
             appointment.setAppointmentDescription("Appointment Rescheduled");
         } else {
             appointment.setStatus(approvalResponse.getStatus());
+            appointment.setAppointmentDescription(appointment.getStatus());
         }
 
         appointment.setUpdatedAt(DefaultValuesPopulator.getCurrentTimestamp());
@@ -58,13 +59,19 @@ public class DoctorApprovalHandler {
                 UriComponentsBuilder.fromHttpUrl(env.getProperty("payment.server.domain") + "/payment/payment-interface")
                 .queryParam("appointmentId", appointmentResponse.getId()).queryParam("amount", doctorResponse.getFee()).toUriString() : "";
 
-        kafkaTemplate.send("appointment-status-mail-for-patient", BasicUtility.stringifyObject(doctorResponse) + " <> "
-                + BasicUtility.stringifyObject(patientResponse) + " <> " + BasicUtility.stringifyObject(appointmentResponse) + " <> "
-                + paymentServiceUrl
+        pubSubTemplate.publish(
+                "appointment-status-mail-for-patient",
+                BasicUtility.stringifyObject(doctorResponse) + " <> "
+                        + BasicUtility.stringifyObject(patientResponse) + " <> "
+                        + BasicUtility.stringifyObject(appointmentResponse) + " <> "
+                        + paymentServiceUrl
         );
 
-        kafkaTemplate.send("appointment-status-mail-for-doctor", BasicUtility.stringifyObject(doctorResponse) + " <> "
-                + BasicUtility.stringifyObject(patientResponse) + " <> " + BasicUtility.stringifyObject(appointmentResponse)
+        pubSubTemplate.publish(
+                "appointment-status-mail-for-doctor",
+                BasicUtility.stringifyObject(doctorResponse) + " <> "
+                        + BasicUtility.stringifyObject(patientResponse) + " <> "
+                        + BasicUtility.stringifyObject(appointmentResponse)
         );
     }
 }

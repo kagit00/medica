@@ -7,4 +7,5 @@ import reactor.core.publisher.Mono;
 import java.util.UUID;
 
 public interface SpecializationRepository extends JpaRepository<Specialization, UUID> {
+    Specialization findByName(String name);
 }

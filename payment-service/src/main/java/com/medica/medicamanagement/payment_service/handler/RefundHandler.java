@@ -3,6 +3,7 @@ package com.medica.medicamanagement.payment_service.handler;
 import com.braintreegateway.BraintreeGateway;
 import com.braintreegateway.Result;
 import com.braintreegateway.Transaction;
+import com.google.cloud.spring.pubsub.core.PubSubTemplate;
 import com.medica.dto.PaymentStatus;
 import com.medica.medicamanagement.payment_service.dao.PaymentRepository;
 import com.medica.medicamanagement.payment_service.dao.RefundRepository;
@@ -10,11 +11,9 @@ import com.medica.medicamanagement.payment_service.dao.TransactionRepository;
 import com.medica.medicamanagement.payment_service.model.CustomTransaction;
 import com.medica.medicamanagement.payment_service.model.Payment;
 import com.medica.medicamanagement.payment_service.model.Refund;
-import com.medica.model.AppointmentStatus;
 import com.medica.util.DefaultValuesPopulator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,7 +27,7 @@ import java.util.List;
 @Slf4j
 @RequiredArgsConstructor
 public class RefundHandler {
-    private final KafkaTemplate<String, String> kafkaTemplate;
+    private final PubSubTemplate pubSubTemplate;
     private final BraintreeGateway gateway;
     private final PaymentRepository paymentRepository;
     private final TransactionRepository transactionRepository;
@@ -76,8 +75,10 @@ public class RefundHandler {
         payment.setCustomTransaction(customTransaction);
         paymentRepository.save(payment);
 
-        kafkaTemplate.send("appointment-refund-status",
-                "{" + "\"appointmentId\": \"" + payment.getAppointmentId() + "\"," + "\"refundStatus\": \"" + payment.getStatus().name() + "\"}"
+        pubSubTemplate.publish(
+                "appointment-refund-status",
+                "{" + "\"appointmentId\": \"" + payment.getAppointmentId()
+                        + "\"," + "\"refundStatus\": \"" + payment.getStatus().name() + "\"}"
         );
     }
 

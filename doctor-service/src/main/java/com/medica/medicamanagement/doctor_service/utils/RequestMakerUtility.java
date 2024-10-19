@@ -24,7 +24,7 @@ public class RequestMakerUtility {
      */
     public static UserRequest makeUserRequest(DoctorRequest doctorRequest) {
         return UserRequest.builder()
-                .phone(doctorRequest.getPhone()).address(doctorRequest.getAddress())
+                .phone(doctorRequest.getPhone()).address(doctorRequest.getAddress()).email(doctorRequest.getEmail())
                 .lastName(doctorRequest.getLastName()).firstName(doctorRequest.getFirstName())
                 .age(doctorRequest.getAge()).username(doctorRequest.getUsername())
                 .roles(List.of(RoleReq.builder().name("DOCTOR").build()))

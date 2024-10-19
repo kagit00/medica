@@ -50,4 +50,43 @@ public interface AppointmentService {
      * @param id the id
      */
     void deleteAppointment(UUID id);
+
+    /**
+     * Gets appointment info.
+     *
+     * @param patientId the patient id
+     * @param date      the date
+     * @param startTime the start time
+     * @param endTime   the end time
+     * @return the appointment info
+     */
+    AppointmentResponse getAppointmentInfo(UUID patientId, String date, String startTime, String endTime);
+
+    /**
+     * Gets all appointments.
+     *
+     * @param patientId the patient id
+     * @return the all appointments
+     */
+    List<AppointmentResponse> getAllAppointments(UUID patientId);
+
+    /**
+     * Gets appointment info for doctor.
+     *
+     * @param doctorId  the doctor id
+     * @param date      the date
+     * @param startTime the start time
+     * @param endTime   the end time
+     * @return the appointment info for doctor
+     */
+    AppointmentResponse getAppointmentInfoForDoctor(UUID doctorId, String date, String startTime, String endTime);
+
+    /**
+     * Gets all appointments for doctor.
+     *
+     * @param doctorId the doctor id
+     * @return the all appointments for doctor
+     */
+    List<AppointmentResponse> getAllAppointmentsForDoctor(UUID doctorId);
+
 }

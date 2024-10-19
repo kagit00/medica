@@ -1,14 +1,16 @@
 package com.medica.medicamanagement.doctor_service.controller;
 
+import com.medica.dto.AppointmentResponse;
 import com.medica.dto.DoctorApprovalResponse;
 import com.medica.medicamanagement.doctor_service.service.AppointmentProgressService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Mono;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController

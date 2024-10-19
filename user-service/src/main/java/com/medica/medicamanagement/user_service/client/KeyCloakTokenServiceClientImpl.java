@@ -12,10 +12,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.Objects;
 
-/**
- * The `KeyCloakTokenServiceClientImpl` class in Java is a service implementation that retrieves an
- * admin access token from Keycloak using WebClient.
- */
+
 @Service
 @Slf4j
 public class KeyCloakTokenServiceClientImpl implements KeyCloakTokenServiceClient {
@@ -36,13 +33,6 @@ public class KeyCloakTokenServiceClientImpl implements KeyCloakTokenServiceClien
         this.keycloakWebClient = keycloakWebClient;
     }
 
-    /**
-     * This function sends a POST request to a Keycloak server to obtain an admin access token using
-     * client credentials.
-     * 
-     * @return A `Mono<String>` is being returned. This method fetches an admin access token from
-     * Keycloak using client credentials grant type and returns the access token as a `Mono<String>`.
-     */
     @Override
     public Mono<String> getAdminAccessToken() {
         return this.keycloakWebClient.post()

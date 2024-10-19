@@ -2,14 +2,21 @@ package com.medica.medicamanagement.patient_service.controller;
 
 import com.medica.dto.AppointmentRequest;
 import com.medica.dto.AppointmentRescheduleRequest;
+import com.medica.dto.AppointmentResponse;
 import com.medica.dto.NotificationResponse;
 import com.medica.medicamanagement.patient_service.service.AppointmentProgressService;
 import com.medica.medicamanagement.patient_service.service.PatientService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Mono;
+
+import java.util.Date;
+import java.util.List;
+import java.util.UUID;
 
 /**
  * The type Appointment progress controller.

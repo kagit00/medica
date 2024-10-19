@@ -1,5 +1,6 @@
 package com.medica.medicamanagement.appointment_service.handler;
 
+import com.google.cloud.spring.pubsub.core.PubSubTemplate;
 import com.medica.dto.AppointmentResponse;
 import com.medica.dto.DoctorResponse;
 import com.medica.dto.PatientResponse;
@@ -12,7 +13,6 @@ import com.medica.medicamanagement.appointment_service.util.ResponseMakerUtility
 import com.medica.model.AppointmentStatus;
 import com.medica.util.BasicUtility;
 import lombok.RequiredArgsConstructor;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 /**
@@ -24,7 +24,7 @@ public class PaymentStatusHandler {
     private final DoctorServiceClient doctorService;
     private final PatientServiceClient patientService;
     private final AppointmentRepository appointmentRepository;
-    private final KafkaTemplate<String, String> kafkaTemplate;
+    private final PubSubTemplate pubSubTemplate;
 
     /**
      * Notify patient and doctor.
@@ -36,14 +36,24 @@ public class PaymentStatusHandler {
     public void notifyPatientAndDoctor(Appointment appointment, DoctorResponse doctorResponse, PatientResponse patientResponse) {
 
         AppointmentResponse appointmentResponse = ResponseMakerUtility.getAppointmentResponse(appointment);
-        kafkaTemplate.send("appointment_response_by_appointment_setters", BasicUtility.stringifyObject(appointmentResponse));
 
-        kafkaTemplate.send("appointment-status-mail-for-patient", BasicUtility.stringifyObject(doctorResponse) + " <> "
-                + BasicUtility.stringifyObject(patientResponse) + " <> " + BasicUtility.stringifyObject(appointmentResponse)
+        pubSubTemplate.publish(
+                "appointment-response-by-appointment-setters",
+                BasicUtility.stringifyObject(appointmentResponse)
         );
 
-        kafkaTemplate.send("appointment-status-mail-for-doctor", BasicUtility.stringifyObject(doctorResponse) + " <> "
-                + BasicUtility.stringifyObject(patientResponse) + " <> " + BasicUtility.stringifyObject(appointmentResponse)
+        pubSubTemplate.publish(
+                "appointment-status-mail-for-patient",
+                BasicUtility.stringifyObject(doctorResponse) + " <> "
+                        + BasicUtility.stringifyObject(patientResponse) + " <> "
+                        + BasicUtility.stringifyObject(appointmentResponse)
+        );
+
+        pubSubTemplate.publish(
+                "appointment-status-mail-for-doctor",
+                BasicUtility.stringifyObject(doctorResponse) + " <> "
+                        + BasicUtility.stringifyObject(patientResponse) + " <> "
+                        + BasicUtility.stringifyObject(appointmentResponse)
         );
     }
 

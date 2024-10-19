@@ -13,6 +13,7 @@ import java.time.temporal.ChronoField;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 /**
  * The type Validation utility.
@@ -43,7 +44,7 @@ public final class ValidationUtility {
             return false;
         }
 
-        boolean isTimeSlotAlreadyTakenByPatient = appointmentRepository.existsByTimeRangePatient(request.getPatientId(),
+        boolean isTimeSlotAlreadyTakenByPatient = appointmentRepository.existsByTimeRangePatient(UUID.fromString(request.getPatientId()),
                 request.getAppointmentDate(), request.getTimeRange().getStartTime(), request.getTimeRange().getEndTime());
 
         if (isTimeSlotAlreadyTakenByPatient) {
@@ -51,7 +52,7 @@ public final class ValidationUtility {
             return false;
         }
 
-        boolean isTimeSlotAlreadyTakenByDoctor = appointmentRepository.existsByTimeRangeDoctor(request.getDoctorId(),
+        boolean isTimeSlotAlreadyTakenByDoctor = appointmentRepository.existsByTimeRangeDoctor(UUID.fromString(request.getDoctorId()),
                 request.getAppointmentDate(), request.getTimeRange().getStartTime(), request.getTimeRange().getEndTime());
 
         if (isTimeSlotAlreadyTakenByDoctor) {

@@ -1,5 +1,6 @@
 package com.medica.medicamanagement.patient_service.service;
 
+import com.google.cloud.spring.pubsub.core.PubSubTemplate;
 import com.medica.dto.AppointmentRequest;
 import com.medica.dto.AppointmentRescheduleRequest;
 import com.medica.dto.NotificationResponse;
@@ -11,8 +12,8 @@ import com.medica.util.BasicUtility;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
+
 import java.util.Objects;
 import java.util.UUID;
 
@@ -23,7 +24,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @Slf4j
 public class AppointmentProgressServiceImpl implements AppointmentProgressService {
-    private final KafkaTemplate<String, String> kafkaTemplate;
+    private final PubSubTemplate pubSubTemplate;
     private final PatientRepo patientRepo;
 
     @Override
@@ -32,25 +33,28 @@ public class AppointmentProgressServiceImpl implements AppointmentProgressServic
             throw new BadRequestException("Appointment status must be INITIATED");
         }
 
-        UUID patientId = request.getPatientId();
+        UUID patientId = UUID.fromString(request.getPatientId());
         Patient patient = this.patientRepo.findById(patientId).orElse(null);
         if (Objects.isNull(patient)) {
             throw new BadRequestException("No Patient Found With Given Id: " + patientId);
         }
 
-        kafkaTemplate.send("appointment_request_by_patient", BasicUtility.stringifyObject(request));
+        pubSubTemplate.publish("appointment-request-by-patient", BasicUtility.stringifyObject(request));
         return BasicUtility.generateNotificationResponse("Appointment Request Successfully Sent", HttpStatus.OK.name());
     }
 
     @Override
     public NotificationResponse cancelAppointment(String appointmentId) {
-        kafkaTemplate.send("appointment-cancelled-by-patient", appointmentId);
+        pubSubTemplate.publish("appointment-cancelled-by-patient", appointmentId);
         return BasicUtility.generateNotificationResponse("Appointment Cancelled Successfully By Patient", HttpStatus.OK.name());
     }
 
     @Override
     public NotificationResponse rescheduleAppointment(String appointmentId, AppointmentRescheduleRequest appointmentRescheduleRequest) {
-        kafkaTemplate.send("appointment-rescheduled-by-patient", appointmentId + " <> " + BasicUtility.stringifyObject(appointmentRescheduleRequest));
+        pubSubTemplate.publish(
+                "appointment-rescheduled-by-patient",
+                appointmentId + " <> " + BasicUtility.stringifyObject(appointmentRescheduleRequest)
+        );
         return BasicUtility.generateNotificationResponse("Appointment Rescheduled Successfully By Patient", HttpStatus.OK.name());
     }
 }

@@ -1,7 +1,9 @@
 package com.medica.medicamanagement.appointment_service.client;
 
 import com.medica.dto.DoctorResponse;
+import com.medica.exception.BadRequestException;
 import com.medica.exception.InternalServerErrorException;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -19,8 +21,8 @@ public class DoctorServiceClientImplementation implements DoctorServiceClient {
 
     @Override
     public DoctorResponse getDoctorById(String id) {
-        if (doctorsServerDomain == null || doctorsServerDomain.isEmpty()) {
-            throw new InternalServerErrorException("doctorsServerDomain property must not be null or empty");
+        if (StringUtils.isEmpty(doctorsServerDomain)) {
+            throw new BadRequestException("doctorsServerDomain property must not be null or empty");
         }
 
         return webClient.get()

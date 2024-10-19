@@ -6,6 +6,7 @@ import com.medica.medicamanagement.patient_service.models.Patient;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -18,7 +19,7 @@ public interface PatientService {
      * @param patientRequest the patient request
      * @return the mono
      */
-    Mono<PatientResponse> createPatient(PatientRequest patientRequest);
+    Mono<Map<String, Object>> createPatient(PatientRequest patientRequest);
 
     /**
      * Delete patient mono.

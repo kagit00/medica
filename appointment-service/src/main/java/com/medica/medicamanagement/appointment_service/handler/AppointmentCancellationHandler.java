@@ -1,9 +1,11 @@
 package com.medica.medicamanagement.appointment_service.handler;
 
+import com.google.cloud.spring.pubsub.core.PubSubTemplate;
 import com.medica.dto.AppointmentResponse;
 import com.medica.dto.DoctorResponse;
 import com.medica.dto.PatientResponse;
 import com.medica.dto.PaymentStatus;
+import com.medica.exception.BadRequestException;
 import com.medica.medicamanagement.appointment_service.client.DoctorServiceClient;
 import com.medica.medicamanagement.appointment_service.client.PatientServiceClient;
 import com.medica.medicamanagement.appointment_service.dao.AppointmentRepository;
@@ -14,7 +16,6 @@ import com.medica.util.BasicUtility;
 import com.medica.util.DefaultValuesPopulator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import java.util.Objects;
 import java.util.UUID;
@@ -27,7 +28,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class AppointmentCancellationHandler {
     private final AppointmentRepository appointmentRepository;
-    private final KafkaTemplate<String, String> kafkaTemplate;
+    private final PubSubTemplate pubSubTemplate;
     private final DoctorServiceClient doctorService;
     private final PatientServiceClient patientService;
 
@@ -41,7 +42,7 @@ public class AppointmentCancellationHandler {
         Appointment appointment = appointmentRepository.findById(UUID.fromString(appointmentId)).orElse(null);
 
         if (!Objects.isNull(appointment) && (AppointmentStatus.SCHEDULED.name().equals(appointment.getStatus()) ||
-                AppointmentStatus.RESCHEDULED.name().equals(appointment.getStatus()))) {
+                AppointmentStatus.RESCHEDULED.name().equals(appointment.getStatus()) || AppointmentStatus.APPROVED.name().equals(appointment.getStatus()))) {
 
             appointment.setStatus(AppointmentStatus.CANCELED.name());
             appointment.setUpdatedAt(DefaultValuesPopulator.getCurrentTimestamp());
@@ -56,25 +57,25 @@ public class AppointmentCancellationHandler {
             notifyPatientAndDoctor(doctorResponse, patientResponse, appointment, isCanceledByPatient);
 
             if (!isCanceledByPatient) {
-                kafkaTemplate.send("process-refund-to-patient", BasicUtility.stringifyObject(appointment));
+                pubSubTemplate.publish("process-refund-to-patient", BasicUtility.stringifyObject(appointment));
             }
             return;
         }
-        log.error("Appointment id should not be null or in scheduled state for appointment cancellation");
+        throw new BadRequestException("Appointment id should not be null or in scheduled/approved/rescheduled state for appointment cancellation");
     }
 
     private void notifyPatientAndDoctor(DoctorResponse doctorResponse, PatientResponse patientResponse, Appointment appointment, boolean isCanceledByPatient) {
         AppointmentResponse appointmentResponse = ResponseMakerUtility.getAppointmentResponse(appointment);
         if (isCanceledByPatient) {
-            kafkaTemplate.send("appointment-cancelled-by-patient", appointment.getId().toString());
+            pubSubTemplate.publish("appointment-cancelled-by-patient", appointment.getId().toString());
         }
 
-        kafkaTemplate.send("appointment-status-mail-for-patient", BasicUtility.stringifyObject(doctorResponse) + " <> "
+        pubSubTemplate.publish("appointment-status-mail-for-patient", BasicUtility.stringifyObject(doctorResponse) + " <> "
                 + BasicUtility.stringifyObject(patientResponse) + " <> " + BasicUtility.stringifyObject(appointmentResponse) + " <> " + " "
                 + " <> " + isCanceledByPatient
         );
 
-        kafkaTemplate.send("appointment-status-mail-for-doctor", BasicUtility.stringifyObject(doctorResponse) + " <> "
+        pubSubTemplate.publish("appointment-status-mail-for-doctor", BasicUtility.stringifyObject(doctorResponse) + " <> "
                 + BasicUtility.stringifyObject(patientResponse) + " <> " + BasicUtility.stringifyObject(appointmentResponse) + " <> " + " "
                 + " <> " + isCanceledByPatient
         );
@@ -88,7 +89,7 @@ public class AppointmentCancellationHandler {
      */
     public void notifyRefundStatusToPatient(String appointmentId, String status) {
         if (PaymentStatus.REFUNDED.name().equals(status)) {
-            //kafkaTemplate.send("appointment-status-mail-for-patient", "");
+            // pubSubTemplate.publish("appointment-status-mail-for-patient", "");
         }
     }
 }

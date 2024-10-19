@@ -3,6 +3,7 @@ package com.medica.medicamanagement.patient_service.client;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.medica.dto.UserRequest;
 import com.medica.dto.UserResponse;
+import com.medica.exception.InternalServerErrorException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
@@ -46,13 +47,13 @@ public class UserServiceClientImpl implements UserServiceClient {
                             clientResponse.bodyToMono(String.class)
                                     .flatMap(errorBody -> {
                                         log.error("Client Error on User Creation: {} - {}", clientResponse.statusCode(), errorBody);
-                                        return Mono.error(new RuntimeException("Client error: " + errorBody));
+                                        return Mono.error(new InternalServerErrorException("Client error: " + errorBody));
                                     }))
                     .onStatus(HttpStatusCode::is5xxServerError, clientResponse ->
                             clientResponse.bodyToMono(String.class)
                                     .flatMap(errorBody -> {
                                         log.error("500 Server Error on User Creation: {} - {}", clientResponse.statusCode(), errorBody);
-                                        return Mono.error(new RuntimeException("Server error: " + errorBody));
+                                        return Mono.error(new InternalServerErrorException("Server error: " + errorBody));
                                     }))
                     .bodyToMono(UserResponse.class)
                     .subscribeOn(Schedulers.boundedElastic());
@@ -75,13 +76,13 @@ public class UserServiceClientImpl implements UserServiceClient {
                         clientResponse.bodyToMono(String.class)
                                 .flatMap(errorBody -> {
                                     log.error("Client Error on User Update: {} - {}", clientResponse.statusCode(), errorBody);
-                                    return Mono.error(new RuntimeException("Client error: " + errorBody));
+                                    return Mono.error(new InternalServerErrorException("Client error: " + errorBody));
                                 }))
                 .onStatus(HttpStatusCode::is5xxServerError, clientResponse ->
                         clientResponse.bodyToMono(String.class)
                                 .flatMap(errorBody -> {
                                     log.error("Server Error on User Update: {} - {}", clientResponse.statusCode(), errorBody);
-                                    return Mono.error(new RuntimeException("Server error: " + errorBody));
+                                    return Mono.error(new InternalServerErrorException("Server error: " + errorBody));
                                 }))
                 .bodyToMono(UserResponse.class)
                 .subscribeOn(Schedulers.boundedElastic());
@@ -97,13 +98,13 @@ public class UserServiceClientImpl implements UserServiceClient {
                         clientResponse.bodyToMono(String.class)
                                 .flatMap(errorBody -> {
                                     log.error("Client Error on User Retrieval: {} - {}", clientResponse.statusCode(), errorBody);
-                                    return Mono.error(new RuntimeException("Client error: " + errorBody));
+                                    return Mono.error(new InternalServerErrorException("Client error: " + errorBody));
                                 }))
                 .onStatus(HttpStatusCode::is5xxServerError, clientResponse ->
                         clientResponse.bodyToMono(String.class)
                                 .flatMap(errorBody -> {
                                     log.error("Server Error on User Retrieval: {} - {}", clientResponse.statusCode(), errorBody);
-                                    return Mono.error(new RuntimeException("Server error: " + errorBody));
+                                    return Mono.error(new InternalServerErrorException("Server error: " + errorBody));
                                 }))
                 .bodyToMono(UserResponse.class)
                 .subscribeOn(Schedulers.boundedElastic());
@@ -119,13 +120,13 @@ public class UserServiceClientImpl implements UserServiceClient {
                         clientResponse.bodyToMono(String.class)
                                 .flatMap(errorBody -> {
                                     log.error("Client Error on Deletion of User: {} - {}", clientResponse.statusCode(), errorBody);
-                                    return Mono.error(new RuntimeException("Client error: " + errorBody));
+                                    return Mono.error(new InternalServerErrorException("Client error: " + errorBody));
                                 }))
                 .onStatus(HttpStatusCode::is5xxServerError, clientResponse ->
                         clientResponse.bodyToMono(String.class)
                                 .flatMap(errorBody -> {
                                     log.error("Server Error on Deletion of User: {} - {}", clientResponse.statusCode(), errorBody);
-                                    return Mono.error(new RuntimeException("Server error: " + errorBody));
+                                    return Mono.error(new InternalServerErrorException("Server error: " + errorBody));
                                 }))
                 .bodyToMono(Void.class)
                 .subscribeOn(Schedulers.boundedElastic());

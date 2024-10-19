@@ -2,6 +2,7 @@ package com.medica.medicamanagement.doctor_service.service;
 
 import com.medica.dto.DoctorResponse;
 import com.medica.dto.UserRequest;
+import com.medica.exception.InternalServerErrorException;
 import com.medica.medicamanagement.doctor_service.client.UserServiceClient;
 import com.medica.medicamanagement.doctor_service.dao.DoctorRepository;
 import com.medica.medicamanagement.doctor_service.dao.SpecializationRepository;
@@ -9,10 +10,10 @@ import com.medica.medicamanagement.doctor_service.dto.DoctorRequest;
 import com.medica.medicamanagement.doctor_service.model.Doctor;
 import com.medica.medicamanagement.doctor_service.model.DoctorAvailability;
 import com.medica.medicamanagement.doctor_service.model.Specialization;
-import com.medica.medicamanagement.doctor_service.utils.DefaultValuesPopulator;
 import com.medica.medicamanagement.doctor_service.utils.RepositoryUtility;
 import com.medica.medicamanagement.doctor_service.utils.RequestMakerUtility;
 import com.medica.medicamanagement.doctor_service.utils.ResponseMakerUtility;
+import com.medica.util.DefaultValuesPopulator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
@@ -53,7 +54,7 @@ public class DoctorServiceImplementation implements DoctorService {
     }
 
     @Override
-    public Mono<DoctorResponse> createDoctor(DoctorRequest request) {
+    public Mono<Map<String, Object>> createDoctor(DoctorRequest request) {
         Specialization specialization = Specialization.builder()
                 .name(request.getSpecializationRequest().getName()).description(request.getSpecializationRequest().getDescription())
                 .build();
@@ -76,13 +77,24 @@ public class DoctorServiceImplementation implements DoctorService {
                             .toList();
 
                     doctor.setAvailabilities(doctorAvailabilities);
-                    return Mono.fromCallable(() -> this.specializationRepository.save(specialization)).subscribeOn(Schedulers.boundedElastic())
-                            .flatMap(savedSpecialization -> {
+                    return Mono.fromCallable(() -> this.specializationRepository.findByName(specialization.getName()))
+                            .subscribeOn(Schedulers.boundedElastic())
+                            .flatMap(existingSpecialization -> {
+                                Specialization savedSpecialization = (existingSpecialization != null) ? existingSpecialization :
+                                        this.specializationRepository.save(specialization);
+
                                 doctor.setSpecialization(savedSpecialization);
-                                return Mono.fromCallable(() -> this.doctorRepository.save(doctor)).subscribeOn(Schedulers.boundedElastic())
+
+                                return Mono.fromCallable(() -> this.doctorRepository.save(doctor))
+                                        .subscribeOn(Schedulers.boundedElastic())
                                         .map(savedDoctor -> {
                                             log.debug("Doctor saved with ID: {}", savedDoctor.getId());
-                                            return ResponseMakerUtility.getDoctorResponse(savedDoctor, userResponse);
+
+                                            Map<String, Object> response = new HashMap<>();
+                                            response.put("doctor", ResponseMakerUtility.getDoctorResponse(savedDoctor, userResponse));
+                                            response.put("temporaryPassword", Collections.singletonMap("temporaryPasswordForDoctor", userResponse.getPassword()));
+
+                                            return response;
                                         });
                             });
                 });
@@ -92,15 +104,18 @@ public class DoctorServiceImplementation implements DoctorService {
     public Mono<DoctorResponse> updateDoctor(UUID id, DoctorRequest request) {
         return Mono.defer(() ->
                 RepositoryUtility.getDoctorById(id, doctorRepository).flatMap(doctor -> {
-                            Specialization specialization = Specialization.builder()
-                                    .name(request.getSpecializationRequest().getName())
-                                    .description(request.getSpecializationRequest().getDescription())
-                                    .build();
+                    UserRequest userRequest = RequestMakerUtility.makeUserRequest(request);
 
-                            UserRequest userRequest = RequestMakerUtility.makeUserRequest(request);
-
-                            return this.userServiceClient.updateUser(doctor.getUserId().toString(), userRequest)
-                                    .flatMap(userResponse -> {
+                    return this.userServiceClient.updateUser(doctor.getUserId().toString(), userRequest)
+                            .flatMap(userResponse -> Mono.fromCallable(() -> this.specializationRepository.findByName(request.getSpecializationRequest().getName()))
+                                    .subscribeOn(Schedulers.boundedElastic())
+                                    .flatMap(existingSpecialization -> {
+                                        Specialization specialization = (existingSpecialization != null)
+                                                ? existingSpecialization
+                                                : Specialization.builder()
+                                                .name(request.getSpecializationRequest().getName())
+                                                .description(request.getSpecializationRequest().getDescription())
+                                                .build();
 
                                         doctor.setSpecialization(specialization);
                                         if (!StringUtils.isEmpty(request.getFee())) {
@@ -108,16 +123,22 @@ public class DoctorServiceImplementation implements DoctorService {
                                         }
                                         doctor.setUpdatedAt(DefaultValuesPopulator.getCurrentTimestamp());
 
+                                        // Save the updated doctor
                                         return Mono.fromCallable(() -> this.doctorRepository.save(doctor))
                                                 .subscribeOn(Schedulers.boundedElastic())
                                                 .map(savedDoctor -> {
                                                     log.debug("Doctor updated with ID: {}", savedDoctor.getId());
                                                     return ResponseMakerUtility.getDoctorResponse(savedDoctor, userResponse);
                                                 });
-                                    });
-                        })
+                                    }))
+                            .onErrorResume(error -> {
+                                log.error("Error updating doctor: {}", error.getMessage());
+                                return Mono.error(new InternalServerErrorException("Error updating doctor"));
+                            });
+                })
         );
     }
+
 
     @Override
     public Mono<Void> deleteDoctor(UUID doctorId) {

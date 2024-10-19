@@ -42,6 +42,7 @@ public final class RequestMakerUtility {
                 .phone(patientRequest.getPhone()).address(patientRequest.getAddress()).email(patientRequest.getEmailId())
                 .lastName(patientRequest.getLastName()).firstName(patientRequest.getFirstName())
                 .age(patientRequest.getAge()).username(patientRequest.getUsername())
+                .roles(List.of(RoleReq.builder().name("PATIENT").build()))
                 .build();
     }
 }

@@ -3,7 +3,7 @@ package com.medica.medicamanagement.notification_service.service;
 /**
  * The interface Email service.
  */
-public interface EmailService {
+public interface AppointmentStatusEmailService {
     /**
      * Send email to patient.
      *

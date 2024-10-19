@@ -25,7 +25,7 @@ public final class ResponseMakerUtility {
                 .toList();
 
         return DoctorResponse.builder()
-                .id(doctor.getId()).fee(doctor.getFee())
+                .id(doctor.getId()).fee(doctor.getFee()).username(userResponse.getUsername())
                 .email(userResponse.getEmail()).phone(userResponse.getPhone()).firstName(userResponse.getFirstName())
                 .lastName(userResponse.getLastName()).age(userResponse.getAge()).address(userResponse.getAddress())
                 .specialization(specializationResponse).availabilities(doctorAvailabilityResponses)

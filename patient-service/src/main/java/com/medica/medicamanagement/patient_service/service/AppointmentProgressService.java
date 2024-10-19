@@ -2,7 +2,13 @@ package com.medica.medicamanagement.patient_service.service;
 
 import com.medica.dto.AppointmentRequest;
 import com.medica.dto.AppointmentRescheduleRequest;
+import com.medica.dto.AppointmentResponse;
 import com.medica.dto.NotificationResponse;
+import reactor.core.publisher.Mono;
+
+import java.util.Date;
+import java.util.List;
+import java.util.UUID;
 
 /**
  * The interface Appointment progress service.

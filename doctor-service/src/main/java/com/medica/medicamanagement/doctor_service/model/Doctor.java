@@ -28,6 +28,6 @@ public class Doctor {
     private String createdAt;
     @Column(nullable = false)
     private String updatedAt;
-    @OneToMany(mappedBy = "doctor", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "doctor", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private List<DoctorAvailability> availabilities;
 }

@@ -17,9 +17,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @AllArgsConstructor
@@ -29,7 +27,7 @@ public class PatientServiceImplementation implements PatientService {
     private final UserServiceClient userServiceClient;
 
     @Override
-    public Mono<PatientResponse> createPatient(PatientRequest patientRequest) {
+    public Mono<Map<String, Object>> createPatient(PatientRequest patientRequest) {
         UserRequest userRequest = RequestMakerUtility.makeUserCreationRequest(patientRequest);
 
         return this.userServiceClient.createUser(userRequest)
@@ -41,7 +39,15 @@ public class PatientServiceImplementation implements PatientService {
                             .subscribeOn(Schedulers.boundedElastic())
                             .map(savedPatient -> {
                                 log.debug(Constant.PATIENT_NOT_FOUND + "{}", savedPatient.getId());
-                                return ResponseMakerUtility.getPatientResponse(savedPatient, userResponse);
+
+                                Map<String, Object> response = new HashMap<>();
+                                response.put("patient", ResponseMakerUtility.getPatientResponse(patient, userResponse));
+                                response.put(
+                                        "temporaryPassword",
+                                        Collections.singletonMap("temporaryPasswordForPatient", userResponse.getPassword())
+                                );
+
+                                return response;
                             });
                 });
     }
