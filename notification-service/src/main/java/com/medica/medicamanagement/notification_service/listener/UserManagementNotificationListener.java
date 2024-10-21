@@ -22,7 +22,6 @@ public class UserManagementNotificationListener {
      */
     public void emailRegardingPasswordChange(String response) {
         try {
-            System.out.println(response);
             userMgmtEmailService.sendEmailRegardingPasswordChange(response);
         } catch (Exception e) {
             throw new InternalServerErrorException(e.getMessage());

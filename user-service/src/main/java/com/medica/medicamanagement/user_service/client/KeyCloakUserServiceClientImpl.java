@@ -27,26 +27,25 @@ public class KeyCloakUserServiceClientImpl implements KeyCloakUserServiceClient 
 
 
     @Override
-    public Mono<String> createUserInKeycloak(UserRequest userRequest) {
+    public Mono<String> createUserInKeycloak(UserRequest userRequest, String accessToken) {
         KeycloakUserRequest keycloakUserRequest = KeycloakUserRequest.builder()
                 .username(userRequest.getUsername()).email(userRequest.getEmail()).firstName(userRequest.getFirstName())
                 .lastName(userRequest.getLastName()).enabled(true)
                 .build();
 
-        return keyCloakTokenServiceClient.getAdminAccessToken().flatMap(accessToken -> this.keycloakWebClient.post()
+        return keycloakWebClient.post()
                 .uri("/admin/realms/{realm}/users", keycloakRealm)
                 .header("Authorization", "Bearer " + accessToken)
-                .body(Mono.just(keycloakUserRequest), KeycloakUserRequest.class).exchangeToMono(response -> {
+                .body(Mono.just(keycloakUserRequest), KeycloakUserRequest.class)
+                .exchangeToMono(response -> {
                     if (response.statusCode().is2xxSuccessful()) {
-                        return Mono.just(response.headers().header("Location").get(0).substring(
-                                response.headers().header("Location").get(0).lastIndexOf("/") + 1)
-                        );
+                        return Mono.just(response.headers().header("Location").get(0)
+                                .substring(response.headers().header("Location").get(0).lastIndexOf("/") + 1));
                     } else {
                         return response.bodyToMono(String.class).flatMap(errorMessage ->
-                                        Mono.error(new InternalServerErrorException("Failed to create user: " + errorMessage))
-                        );
+                                Mono.error(new InternalServerErrorException("Failed to create user: " + errorMessage)));
                     }
-                }));
+                });
     }
 
     @Override
@@ -56,7 +55,7 @@ public class KeyCloakUserServiceClientImpl implements KeyCloakUserServiceClient 
                 .lastName(userRequest.getLastName()).enabled(true)
                 .build();
 
-        return this.keycloakWebClient.put()
+        return keycloakWebClient.put()
                 .uri("/admin/realms/{realm}/users/{id}", keycloakRealm, userId)
                 .header("Authorization", "Bearer " + accessToken)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -78,7 +77,7 @@ public class KeyCloakUserServiceClientImpl implements KeyCloakUserServiceClient 
     @Override
     public Mono<Void> deleteUserInKeycloak(String userId) {
         return keyCloakTokenServiceClient.getAdminAccessToken().flatMap(accessToken ->
-                this.keycloakWebClient.delete()
+                keycloakWebClient.delete()
                         .uri("/admin/realms/{realm}/users/{userId}", keycloakRealm, userId)
                         .header("Authorization", "Bearer " + accessToken)
                         .exchangeToMono(response -> {

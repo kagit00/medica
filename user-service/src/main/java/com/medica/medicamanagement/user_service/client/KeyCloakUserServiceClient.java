@@ -14,7 +14,7 @@ public interface KeyCloakUserServiceClient {
      * @param userRequest the user request
      * @return the mono
      */
-    Mono<String> createUserInKeycloak(UserRequest userRequest);
+    Mono<String> createUserInKeycloak(UserRequest userRequest, String accessToken);
 
     /**
      * Update user in keycloak mono.

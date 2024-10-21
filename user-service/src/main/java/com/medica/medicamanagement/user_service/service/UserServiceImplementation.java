@@ -1,9 +1,7 @@
 package com.medica.medicamanagement.user_service.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.cloud.spring.pubsub.core.PubSubTemplate;
 import com.medica.dto.*;
-import com.medica.exception.InternalServerErrorException;
 import com.medica.medicamanagement.user_service.client.KeyCloakCredentialServiceClient;
 import com.medica.medicamanagement.user_service.client.KeyCloakRoleServiceClient;
 import com.medica.medicamanagement.user_service.client.KeyCloakTokenServiceClient;
@@ -17,12 +15,9 @@ import com.medica.medicamanagement.user_service.model.UserRole;
 import com.medica.medicamanagement.user_service.util.RepositoryUtility;
 import com.medica.medicamanagement.user_service.util.ResponseMakerUtility;
 import com.medica.medicamanagement.user_service.util.SecurityUtility;
-import com.medica.util.BasicUtility;
-import com.medica.util.Constant;
 import com.medica.util.DefaultValuesPopulator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang.RandomStringUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.r2dbc.core.DatabaseClient;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -68,7 +63,7 @@ public class UserServiceImplementation implements UserService {
                             return createUserAndAssignRoles(userRequest, keycloakRoles, accessToken)
                                     .flatMap(user -> ResponseMakerUtility.getUserCreateResponse(user, roles));
                         }))
-                .doOnError(error -> log.error("Error creating user: {}", error.getMessage()));
+                .doOnError(error -> log.error("Error : {}", error.getMessage()));
     }
 
 
@@ -108,7 +103,7 @@ public class UserServiceImplementation implements UserService {
 
     @Override
     public Mono<NotificationResponse> changePassword(String username, UserPasswordRequest userPasswordRequest) {
-        return this.userRepository.findByUserName(username)
+        return userRepository.findByUserName(username)
                 .flatMap($user -> {
                     // Check if the new password matches the current password
                     if (!encoder.matches(userPasswordRequest.getCurrentPassword(), $user.getPassword())) {
@@ -131,14 +126,14 @@ public class UserServiceImplementation implements UserService {
 
                     // Update password in Keycloak and save user
                     return Mono.fromRunnable(() ->
-                                    this.keyCloakCredentialServiceClient.setUserPassword(
+                                    keyCloakCredentialServiceClient.setUserPassword(
                                             $user.getIdentityProviderUserId(),
                                             userPasswordRequest.getNewPassword(),
                                             userPasswordRequest.getCurrentPassword()
                                     )
                             )
                             .then(
-                                    this.userRepository.save($user)
+                                    userRepository.save($user)
                                             .flatMap(updatedUser -> {
                                                 log.info("Password got changed for the user {}", username);
                                                 return ResponseMakerUtility.getNotificationResponse("Password Info Mailed To you", HttpStatus.OK.name());
@@ -159,7 +154,7 @@ public class UserServiceImplementation implements UserService {
     private Mono<User> createUserAndAssignRoles(UserRequest userRequest, List<KeycloakRole> keycloakRoles, String accessToken) {
         User user = createUserEntity(userRequest);
 
-        return keyCloakUserServiceClient.createUserInKeycloak(userRequest)
+        return keyCloakUserServiceClient.createUserInKeycloak(userRequest, accessToken)
                 .flatMap(keycloakUserId -> keyCloakRoleServiceClient.assignRolesToUserInKeycloak(keycloakUserId, keycloakRoles, accessToken)
                         .thenReturn(keycloakUserId))
                 .flatMap(keycloakUserId -> {
@@ -167,7 +162,7 @@ public class UserServiceImplementation implements UserService {
                     user.setId(UUID.fromString(DefaultValuesPopulator.getUid()));
                     user.setPassword(SecurityUtility.getComplexPassword());
 
-                    return Mono.fromRunnable(() -> this.keyCloakCredentialServiceClient.setUserPassword(keycloakUserId, user.getPassword(), null))
+                    return Mono.fromRunnable(() -> keyCloakCredentialServiceClient.setUserPassword(keycloakUserId, user.getPassword(), null))
                             .then(
                                     userRepository.insert(
                                                     user.getId(),
@@ -266,7 +261,7 @@ public class UserServiceImplementation implements UserService {
                         }
 
                         // Update user in Keycloak
-                        this.keyCloakUserServiceClient.updateUserInKeycloak(updatedUser.getIdentityProviderUserId(), userRequest, accessToken)
+                        keyCloakUserServiceClient.updateUserInKeycloak(updatedUser.getIdentityProviderUserId(), userRequest, accessToken)
                                 .doOnSuccess(userId -> log.info("User updated: {}", userId))
                                 .doOnError(error -> log.error("Error updating user: {}", error.getMessage()))
                                 .subscribe();
