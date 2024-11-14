@@ -39,8 +39,8 @@ This project demonstrates a microservices architecture for a healthcare system, 
 ### Steps to run:
 1. Clone the repository:
     ```bash
-    git clone https://github.com/your-username/healthcare-appointment-microservices.git
-    cd healthcare-appointment-microservices
+    git clone https://github.com/kagit00/medica.git
+    
     ```
 2. Build the services:
     ```bash
