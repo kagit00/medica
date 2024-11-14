@@ -1,143 +1,145 @@
-Healthcare Microservices Architecture: Patient, Doctor, Appointment, and Notification
-Overview
-This project demonstrates a microservices architecture for a healthcare system, consisting of four primary services: Patient Service, Doctor Service, Appointment Service, and Notification Service. These services interact with each other to handle patient appointments, doctor availability, and communication via notifications.
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Healthcare Microservices Architecture</title>
+</head>
+<body>
+    <h1>Healthcare Microservices Architecture: Patient, Doctor, Appointment, and Notification</h1>
 
-Services Overview:
-Patient Service: Manages patient records, including personal details, medical history, and appointment requests.
-Doctor Service: Manages doctor profiles, specialties, availability, and approval/rejection of appointments.
-Appointment Service: Handles the creation, modification, and management of patient appointments.
-Notification Service: Sends notifications to patients and doctors (e.g., appointment confirmation, approval, and reminders).
-Flow:
-Patient Service:
-Receives patient appointment requests.
-Notifies the Appointment Service for processing and availability check.
-Appointment Service:
-Sends appointment requests to Doctor Service for approval or rejection.
-Sends status updates (approved, cancelled) back to Patient Service.
-Notifies the Notification Service for communication with the patient and doctor.
-Doctor Service:
-Receives the appointment request from Appointment Service.
-Approves or rejects the appointment based on availability.
-Sends approval or rejection status back to Appointment Service.
-Notification Service:
-Sends notifications to the patient and doctor based on the appointment status (e.g., confirmation, reminder, or cancellation).
-Services Communication
-Synchronous communication via REST API (e.g., Appointment Service -> Patient Service for appointment status updates).
-Asynchronous communication using Webhook or Event-based messaging for notifications and appointment approvals.
-Technologies Used
-Spring Boot for all services
-Spring Cloud for service discovery, config management
-RabbitMQ/Kafka for event-driven messaging (optional)
-MySQL/PostgreSQL for database management
-JWT for authentication and authorization
-Docker for containerization
-Kubernetes for orchestration (optional)
-Running the Project
-Prerequisites:
-Docker and Docker Compose installed for containerization.
-JDK 11+ for building the Spring Boot services.
-RabbitMQ/Kafka running locally or on the cloud for messaging (optional).
-MySQL/PostgreSQL database running locally or cloud.
-Steps to run:
-Clone the repository:
+    <h2>Overview</h2>
+    <p>This project demonstrates a microservices architecture for a healthcare system, consisting of four primary services: <strong>Patient Service</strong>, <strong>Doctor Service</strong>, <strong>Appointment Service</strong>, and <strong>Notification Service</strong>. These services interact with each other to handle patient appointments, doctor availability, and communication via notifications.</p>
 
-bash
-Copy code
-git clone https://github.com/your-username/healthcare-appointment-microservices.git
-cd healthcare-appointment-microservices
-Build the services:
+    <h3>Services Overview:</h3>
+    <ul>
+        <li><strong>Patient Service</strong>: Manages patient records, including personal details, medical history, and appointment requests.</li>
+        <li><strong>Doctor Service</strong>: Manages doctor profiles, specialties, availability, and approval/rejection of appointments.</li>
+        <li><strong>Appointment Service</strong>: Handles the creation, modification, and management of patient appointments.</li>
+        <li><strong>Notification Service</strong>: Sends notifications to patients and doctors (e.g., appointment confirmation, approval, and reminders).</li>
+    </ul>
 
-bash
-Copy code
-mvn clean install
-Start the services using Docker Compose:
+    <h3>Flow:</h3>
+    <ol>
+        <li><strong>Patient Service</strong>: Receives patient appointment requests and notifies the <strong>Appointment Service</strong> for processing and availability check.</li>
+        <li><strong>Appointment Service</strong>: Sends appointment requests to <strong>Doctor Service</strong> for approval or rejection and notifies the <strong>Notification Service</strong> for communication with the patient and doctor.</li>
+        <li><strong>Doctor Service</strong>: Receives the appointment request from <strong>Appointment Service</strong> and sends approval or rejection status back.</li>
+        <li><strong>Notification Service</strong>: Sends notifications to the patient and doctor based on the appointment status (e.g., confirmation, reminder, or cancellation).</li>
+    </ol>
 
-bash
-Copy code
-docker-compose up --build
-This will start all microservices (Patient, Doctor, Appointment, Notification) in containers.
+    <h2>Services Communication</h2>
+    <p><strong>Synchronous</strong> communication via REST API (e.g., Appointment Service -&gt; Patient Service for appointment status updates).</p>
+    <p><strong>Asynchronous</strong> communication using <strong>Webhook</strong> or <strong>Event-based</strong> messaging for notifications and appointment approvals.</p>
 
-Access services:
+    <h2>Technologies Used</h2>
+    <ul>
+        <li><strong>Spring Boot</strong> for all services</li>
+        <li><strong>Spring Cloud</strong> for service discovery, config management</li>
+        <li><strong>RabbitMQ/Kafka</strong> for event-driven messaging (optional)</li>
+        <li><strong>MySQL/PostgreSQL</strong> for database management</li>
+        <li><strong>JWT</strong> for authentication and authorization</li>
+        <li><strong>Docker</strong> for containerization</li>
+        <li><strong>Kubernetes</strong> for orchestration (optional)</li>
+    </ul>
 
-Patient Service: http://localhost:8081
-Doctor Service: http://localhost:8082
-Appointment Service: http://localhost:8083
-Notification Service: http://localhost:8084
-Check the logs:
+    <h2>Running the Project</h2>
+    <h3>Prerequisites:</h3>
+    <ul>
+        <li><strong>Docker</strong> and <strong>Docker Compose</strong> installed</li>
+        <li><strong>JDK 11+</strong> for building Spring Boot services</li>
+        <li><strong>RabbitMQ/Kafka</strong> running locally or on the cloud</li>
+        <li><strong>MySQL/PostgreSQL</strong> database running locally or cloud</li>
+    </ul>
 
-bash
-Copy code
-docker-compose logs -f
-API Endpoints
-Patient Service
-POST /api/patients/appointments: Request an appointment with a doctor.
-Request body example:
-json
-Copy code
-{
-  "patientId": 123,
-  "doctorId": 456,
-  "appointmentDate": "2024-12-01T09:00:00"
-}
-Appointment Service
-POST /api/appointments: Create a new appointment and send the request to the doctor for approval.
+    <h3>Steps to run:</h3>
+    <ol>
+        <li>Clone the repository:
+            <pre><code>git clone https://github.com/your-username/healthcare-appointment-microservices.git
+cd healthcare-appointment-microservices</code></pre>
+        </li>
+        <li>Build the services:
+            <pre><code>mvn clean install</code></pre>
+        </li>
+        <li>Start the services using Docker Compose:
+            <pre><code>docker-compose up --build</code></pre>
+            This will start all microservices (Patient, Doctor, Appointment, Notification) in containers.
+        </li>
+        <li>Access services:
+            <ul>
+                <li><strong>Patient Service</strong>: <code>http://localhost:8081</code></li>
+                <li><strong>Doctor Service</strong>: <code>http://localhost:8082</code></li>
+                <li><strong>Appointment Service</strong>: <code>http://localhost:8083</code></li>
+                <li><strong>Notification Service</strong>: <code>http://localhost:8084</code></li>
+            </ul>
+        </li>
+        <li>Check the logs:
+            <pre><code>docker-compose logs -f</code></pre>
+        </li>
+    </ol>
 
-Request body example:
-json
-Copy code
-{
-  "patientId": 123,
-  "doctorId": 456,
-  "appointmentDate": "2024-12-01T09:00:00"
-}
-GET /api/appointments/{id}: Get appointment details by ID.
+    <h2>API Endpoints</h2>
+    <h3>Patient Service</h3>
+    <ul>
+        <li><strong>POST /api/patients/appointments</strong>: Request an appointment with a doctor.
+            <pre><code>{
+    "patientId": 123,
+    "doctorId": 456,
+    "appointmentDate": "2024-12-01T09:00:00"
+}</code></pre>
+        </li>
+    </ul>
 
-Doctor Service
-POST /api/doctors/appointments/approve: Approve an appointment request.
+    <h3>Appointment Service</h3>
+    <ul>
+        <li><strong>POST /api/appointments</strong>: Create a new appointment.
+            <pre><code>{
+    "patientId": 123,
+    "doctorId": 456,
+    "appointmentDate": "2024-12-01T09:00:00"
+}</code></pre>
+        </li>
+        <li><strong>GET /api/appointments/{id}</strong>: Get appointment details by ID.</li>
+    </ul>
 
-Request body example:
-json
-Copy code
-{
-  "appointmentId": 789,
-  "status": "APPROVED"
-}
-POST /api/doctors/appointments/reject: Reject an appointment request.
+    <h3>Doctor Service</h3>
+    <ul>
+        <li><strong>POST /api/doctors/appointments/approve</strong>: Approve an appointment.
+            <pre><code>{
+    "appointmentId": 789,
+    "status": "APPROVED"
+}</code></pre>
+        </li>
+        <li><strong>POST /api/doctors/appointments/reject</strong>: Reject an appointment.
+            <pre><code>{
+    "appointmentId": 789,
+    "status": "REJECTED"
+}</code></pre>
+        </li>
+    </ul>
 
-Request body example:
-json
-Copy code
-{
-  "appointmentId": 789,
-  "status": "REJECTED"
-}
-Notification Service
-POST /api/notifications: Send a notification to the patient or doctor.
-Request body example:
-json
-Copy code
-{
-  "recipientId": 123,
-  "message": "Your appointment with Dr. Smith has been confirmed for 2024-12-01 at 9:00 AM."
-}
-Event Flow
-Appointment Request:
+    <h3>Notification Service</h3>
+    <ul>
+        <li><strong>POST /api/notifications</strong>: Send a notification to the patient or doctor.
+            <pre><code>{
+    "recipientId": 123,
+    "message": "Your appointment with Dr. Smith has been confirmed for 2024-12-01 at 9:00 AM."
+}</code></pre>
+        </li>
+    </ul>
 
-Patient Service receives the patient's appointment request.
-Appointment Service creates an appointment and sends it to Doctor Service for approval.
-Doctor Service approves or rejects the appointment.
-Appointment Service updates the patient with the status and triggers notifications.
-Appointment Status Update:
+    <h2>Event Flow</h2>
+    <p>Details of the event-driven flow between services for appointment management and notifications.</p>
 
-If the doctor approves the appointment, Appointment Service updates the Patient Service.
-Notification Service sends confirmation to the patient and doctor.
-If the doctor rejects the appointment, Appointment Service updates the Patient Service and Notification Service sends a rejection message.
-Notification:
+    <h2>Future Enhancements</h2>
+    <ul>
+        <li>Add payment gateway integration for appointments.</li>
+        <li>Implement doctor availability slots.</li>
+        <li>Add cancellation policy for patients.</li>
+        <li>Enhance security with OAuth2/JWT for service-to-service authentication.</li>
+        <li>Implement monitoring and logging with Spring Actuator and ELK stack.</li>
+    </ul>
 
-Notification Service sends notifications based on appointment actions (confirmation, rejection, etc.) via SMS or email.
-Future Enhancements:
-Add payment gateway integration for appointment payments (e.g., Stripe, PayPal).
-Implement availability slots for doctors to manage their time slots.
-Add cancellation policy to handle patient-initiated appointment cancellations.
-Enhance security with OAuth2/JWT for service-to-service authentication.
-Implement monitoring and logging using Spring Actuator and ELK stack (Elasticsearch, Logstash, Kibana).
+    <h2>License</h2>
+    <p>This project is licensed under the MIT License - see the <a href="LICENSE">LICENSE</a> file for details.</p>
+</body>
+</html>
