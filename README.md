@@ -97,4 +97,4 @@ Each module is a standalone microservice that communicates with others via Kafka
 ### Installation
 1. Clone the repository:
    ```bash
-   git clone https://github.com/kagit00/healthcare-appointment-system.git
+   git clone https://github.com/kagit00/medica.git
