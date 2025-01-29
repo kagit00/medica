@@ -1,124 +1,100 @@
-# Healthcare Microservices Architecture: Patient, Doctor, Appointment, and Notification
+# Healthcare Appointment Management System
 
-## Overview
-This project demonstrates a microservices architecture for a healthcare system, consisting of four primary services: **Patient Service**, **Doctor Service**, **Appointment Service**, and **Notification Service**. These services interact with each other to handle patient appointments, doctor availability, and communication via notifications.
+This project is a microservices-based healthcare appointment management system. It consists of multiple microservices that work together to handle patient appointments, doctor validations, notifications, and user management. The system is built using Java, Spring Boot, Reactive Programming, and integrates with Kafka, PostgreSQL, Hibernate, Braintree, and Keycloak.
 
-### Services Overview:
-- **Patient Service**: Manages patient records, including personal details, medical history, and appointment requests.
-- **Doctor Service**: Manages doctor profiles, specialties, availability, and approval/rejection of appointments.
-- **Appointment Service**: Handles the creation, modification, and management of patient appointments.
-- **Notification Service**: Sends notifications to patients and doctors (e.g., appointment confirmation, approval, and reminders).
+---
 
-### Flow:
-1. **Patient Service**: Receives patient appointment requests and notifies the **Appointment Service** for processing and availability check.
-2. **Appointment Service**: Sends appointment requests to **Doctor Service** for approval or rejection and notifies the **Notification Service** for communication with the patient and doctor.
-3. **Doctor Service**: Receives the appointment request from **Appointment Service** and sends approval or rejection status back.
-4. **Notification Service**: Sends notifications to the patient and doctor based on the appointment status (e.g., confirmation, reminder, or cancellation).
+## Table of Contents
+1. [Project Structure](#project-structure)
+2. [Microservices Overview](#microservices-overview)
+3. [Tech Stack](#tech-stack)
+4. [Getting Started](#getting-started)
+5. [API Documentation](#api-documentation)
+6. [Contributing](#contributing)
+7. [License](#license)
 
-## Services Communication
-- **Synchronous** communication via REST API (e.g., Appointment Service -> Patient Service for appointment status updates).
-- **Asynchronous** communication using **Webhook** or **Event-based** messaging for notifications and appointment approvals.
+---
 
-## Technologies Used
-- **Spring Boot** for all services
-- **Spring Cloud** for service discovery, config management
-- **RabbitMQ/Kafka** for event-driven messaging (optional)
-- **MySQL/PostgreSQL** for database management
-- **JWT** for authentication and authorization
-- **Docker** for containerization
-- **Kubernetes** for orchestration (optional)
+## Project Structure
 
-## Running the Project
+The project is structured as a Maven multi-module project. The parent `pom.xml` includes the following modules:
 
-### Prerequisites:
-- **Docker** and **Docker Compose** installed
-- **JDK 11+** for building Spring Boot services
-- **RabbitMQ/Kafka** running locally or on the cloud
-- **MySQL/PostgreSQL** database running locally or cloud
+1. **Patient Service**
+2. **Appointment Service**
+3. **Doctor Service**
+4. **Notification Service**
+5. **User Service**
 
-### Steps to run:
+Each module is a standalone microservice that communicates with others via Kafka or Google Pub/Sub.
+
+---
+
+## Microservices Overview
+
+### 1. Patient Service
+- **Functionality**: Allows patients to request appointments.
+- **Communication**: Uses Kafka/Google Pub/Sub to send appointment requests to the Appointment Service.
+- **Key Features**:
+  - Publishes appointment requests to a Kafka topic.
+  - Handles patient-related data.
+
+### 2. Appointment Service
+- **Functionality**: Validates patient and doctor details, checks slot availability, and forwards requests to the Doctor Service.
+- **Communication**: Communicates with Patient Service and Doctor Service via Kafka/Google Pub/Sub.
+- **Key Features**:
+  - Validates patient, doctor, and slot availability.
+  - Dumps appointment requests into the database.
+  - Forwards requests to the Doctor Service for review.
+
+### 3. Doctor Service
+- **Functionality**: Handles appointment reviews, approvals, rejections, and payment requests.
+- **Communication**: Receives appointment requests from the Appointment Service and sends notifications via the Notification Service.
+- **Key Features**:
+  - Allows doctors to approve or reject appointments.
+  - Updates appointment status in the database.
+  - Initiates payment requests via Braintree (supports GPay and card payments).
+  - Allows doctors to cancel scheduled appointments.
+
+### 4. Notification Service
+- **Functionality**: Sends email notifications for every Kafka message or event.
+- **Communication**: Listens to Kafka topics and sends notifications.
+- **Key Features**:
+  - Sends emails for appointment requests, approvals, rejections, and cancellations.
+
+### 5. User Service
+- **Functionality**: Manages user creation and authentication.
+- **Communication**: Integrates with Keycloak for OAuth2 authentication.
+- **Key Features**:
+  - Creates users in Keycloak and dumps them into the database.
+  - Handles common properties for both patient and doctor entities.
+  - Maintains user tables and links them to patient/doctor tables.
+
+---
+
+## Tech Stack
+
+- **Programming Language**: Java
+- **Framework**: Spring Boot, Reactive Programming
+- **Database**: PostgreSQL
+- **ORM**: Hibernate
+- **Messaging**: Kafka, Google Pub/Sub
+- **Payment Gateway**: Braintree (supports GPay and card payments)
+- **Authentication**: Keycloak, OAuth2
+- **Other Tools**: Maven, Docker
+
+---
+
+## Getting Started
+
+### Prerequisites
+- Java 17 or higher
+- Maven 3.x
+- PostgreSQL
+- Kafka or Google Pub/Sub
+- Keycloak server
+- Braintree account for payment processing
+
+### Installation
 1. Clone the repository:
-    ```bash
-    git clone https://github.com/kagit00/medica.git
-    
-    ```
-2. Build the services:
-    ```bash
-    mvn clean install
-    ```
-3. Start the services using Docker Compose:
-    ```bash
-    docker-compose up --build
-    ```
-    This will start all microservices (Patient, Doctor, Appointment, Notification) in containers.
-4. Access services:
-    - **Patient Service**: `http://localhost:8081`
-    - **Doctor Service**: `http://localhost:8082`
-    - **Appointment Service**: `http://localhost:8083`
-    - **Notification Service**: `http://localhost:8084`
-
-5. Check the logs:
-    ```bash
-    docker-compose logs -f
-    ```
-
-## API Endpoints
-
-### Patient Service
-- **POST /api/patients/appointments**: Request an appointment with a doctor.
-    ```json
-    {
-        "patientId": 123,
-        "doctorId": 456,
-        "appointmentDate": "2024-12-01T09:00:00"
-    }
-    ```
-
-### Appointment Service
-- **POST /api/appointments**: Create a new appointment.
-    ```json
-    {
-        "patientId": 123,
-        "doctorId": 456,
-        "appointmentDate": "2024-12-01T09:00:00"
-    }
-    ```
-- **GET /api/appointments/{id}**: Get appointment details by ID.
-
-### Doctor Service
-- **POST /api/doctors/appointments/approve**: Approve an appointment.
-    ```json
-    {
-        "appointmentId": 789,
-        "status": "APPROVED"
-    }
-    ```
-- **POST /api/doctors/appointments/reject**: Reject an appointment.
-    ```json
-    {
-        "appointmentId": 789,
-        "status": "REJECTED"
-    }
-    ```
-
-### Notification Service
-- **POST /api/notifications**: Send a notification to the patient or doctor.
-    ```json
-    {
-        "recipientId": 123,
-        "message": "Your appointment with Dr. Smith has been confirmed for 2024-12-01 at 9:00 AM."
-    }
-    ```
-
-## Event Flow
-Details of the event-driven flow between services for appointment management and notifications.
-
-## Future Enhancements
-- Add payment gateway integration for appointments.
-- Implement doctor availability slots.
-- Add cancellation policy for patients.
-- Enhance security with OAuth2/JWT for service-to-service authentication.
-- Implement monitoring and logging with Spring Actuator and ELK stack.
-
-## License
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+   ```bash
+   git clone https://github.com/kagit00/healthcare-appointment-system.git
