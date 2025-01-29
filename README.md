@@ -98,3 +98,16 @@ Each module is a standalone microservice that communicates with others via Kafka
 1. Clone the repository:
    ```bash
    git clone https://github.com/kagit00/medica.git
+
+2. Navigate to the project directory:
+   ```bash
+   cd medica
+
+3. Build the project:
+   ```bash
+   mvn clean install
+
+4. Configure the application.yml files for each microservice with the required credentials (database, Kafka, Keycloak, Braintree, etc.).
+5. Run each microservice individually:
+   ```bash
+   mvn spring-boot:run -pl <module-name>
